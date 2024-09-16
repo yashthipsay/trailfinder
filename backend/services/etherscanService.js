@@ -6,6 +6,7 @@ dotenv.config({
     debug: true,
     encoding: 'utf8',
 })
+import getEventsByTransactionHash from "./eventManager.js";
 
 const etherscanProvider = new EtherscanProvider("homestead", `${process.env.ETHERSCAN_API_KEY}`);
 const recursionLimit = 2;
@@ -28,7 +29,7 @@ export const traceFundFlow = async (
 
     visitedAddresses.add(walletAddress);
     const session = driver.session();
-
+    
     try{
         console.log(`Tracing transactions for address: ${walletAddress}, depth: ${depth}`);
 
@@ -82,3 +83,49 @@ const storeTransaction = async(session, tx) => {
         
     )
 }
+
+
+const addTransaction = async ({
+    fromWallet,
+    toWallet,
+    amount,
+    timestamp,
+    chainId,
+    events
+  }) => {
+    const session = driver.session();
+    try {
+      const result = await session.run(
+        `
+        MERGE (t:Transaction {id: randomUUID()})
+        SET t.amount = $amount, t.timestamp = $timestamp, t.chainId = $chainId
+        MERGE (a1:Wallet {address: $fromWallet})
+        MERGE (a2:Wallet {address: $toWallet})
+        MERGE (a1)-[:SENT_FROM]->(t)-[:SENT_TO]->(a2)
+        WITH t
+        UNWIND $events AS event
+        MERGE (e:Event {id: event.id})
+        SET e.name = event.name, e.details = event.details, e.chainId = event.chainId, e.function = event.function
+        MERGE (t)-[:TRIGGERED_IN]->(e)
+        RETURN t, e
+        `,
+        {
+          fromWallet,
+          toWallet,
+          amount,
+          timestamp,
+          chainId,
+          events,
+        }
+      );
+  
+      // Execute the event's function after creating the transaction
+      for (const event of events) {
+        await handleEventFunction(event.function); // Pass the function string to be executed
+      }
+  
+      return result.records[0];
+    } finally {
+      await session.close();
+    }
+  };

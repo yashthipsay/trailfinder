@@ -7,6 +7,7 @@ import neo4j from "neo4j-driver";
 const typeDefs = `#graphql
 type Wallet {
   address: ID! @id
+  chainId: String!
   transactions: [Transaction!]! @relationship(type: "SENT_FROM", direction: OUT)
 }
 
@@ -14,15 +15,26 @@ type Transaction {
   id: ID! @id
   amount: Float!
   timestamp: DateTime!
+  chainId: String!
   from: Wallet! @relationship(type: "SENT_FROM", direction: OUT)
   to: Wallet! @relationship(type: "SENT_TO", direction: IN)
   suspiciousPatterns: [Pattern!]! @relationship(type: "PART_OF_PATTERN", direction: OUT)
+  events: [Event!]! @relationship(type: "TRIGGERED_IN", direction: OUT)
+  bridgedTo: Wallet @relationship(type: "BRIDGED_TO", direction: OUT)
 }
 
 type Pattern {
   name: String!
   description: String
   transactions: [Transaction!]! @relationship(type: "PART_OF_PATTERN", direction: IN)
+}
+
+type Event {
+  id: ID! @id
+  name: String!
+  details: String
+  chainId: String!
+  transaction: Transaction! @relationship(type: "TRIGGERED_IN", direction: IN)
 }
 
 type Query {
@@ -43,11 +55,25 @@ input DateRange {
 }
 
 type Mutation {
-  addWallet(address: String!): Wallet!
-  addTransaction(fromWallet: ID!, toWallet: ID!, amount: Float!, timestamp: DateTime!): Transaction!
+  addWallet(address: String!, chainId: String!): Wallet!
+  addTransaction(
+    fromWallet: ID!, 
+    toWallet: ID!, 
+    amount: Float!, 
+    timestamp: DateTime!, 
+    chainId: String!,
+    events: [EventInput!]!
+  ): Transaction!
 }
 
+input EventInput {
+  id: ID!
+  name: String!
+  details: String
+  chainId: String!
+}
 `;
+
 
 const URI = process.env.NEO4J_URI
     const USER = process.env.NEO4J_USERNAME

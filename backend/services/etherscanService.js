@@ -36,22 +36,26 @@ export const traceFundFlow = async (
         const history = await etherscanProvider.getHistory(walletAddress);
 
         for (let tx of history) {
-            await storeTransaction(session, tx);
             const sender = tx.from;
             const recipient = tx.to;
             const value = tx.value.toString();
             const hash = tx.hash;
+            const events = await getEventsByTransactionHash(hash) || [];
+            await addTransaction(session, tx, events);
 
+            console.log(events);
             console.log(`Transaction ${hash}: ${sender} -> ${recipient}, value: ${value}\n`);
 
             // Recursively trace sender and recipient, if they haven't been visited
             if (!visitedAddresses.has(sender)) {
                 console.log(`Recursing into sender: ${sender}`);
+                visitedAddresses.add(sender);
                 await traceFundFlow(sender, visitedAddresses, depth + 1);
             }
 
             if (!visitedAddresses.has(recipient)) {
                 console.log(`Recursing into recipient: ${recipient}`);
+                visitedAddresses.add(recipient);
                 await traceFundFlow(recipient, visitedAddresses, depth + 1);
             }
         }
@@ -64,6 +68,7 @@ export const traceFundFlow = async (
 }
 
 const storeTransaction = async(session, tx) => {
+
     await session.run(
         `MERGE (t: transaction {hash: $hash})
         SET t += {from: $from, to: $to, value: $value, timestamp: $timestamp}
@@ -82,50 +87,44 @@ const storeTransaction = async(session, tx) => {
         }
         
     )
+
+    
+    
 }
 
 
-const addTransaction = async ({
-    fromWallet,
-    toWallet,
-    amount,
-    timestamp,
-    chainId,
-    events
-  }) => {
-    const session = driver.session();
+const addTransaction = async (session, tx, events) => {
     try {
       const result = await session.run(
         `
         MERGE (t:Transaction {id: randomUUID()})
-        SET t.amount = $amount, t.timestamp = $timestamp, t.chainId = $chainId
-        MERGE (a1:Wallet {address: $fromWallet})
-        MERGE (a2:Wallet {address: $toWallet})
+        SET t.value = $value, t.timestamp = $timestamp
+        MERGE (a1:Wallet {address: $from})
+        MERGE (a2:Wallet {address: $to})
         MERGE (a1)-[:SENT_FROM]->(t)-[:SENT_TO]->(a2)
         WITH t
-        UNWIND $events AS event
-        MERGE (e:Event {id: event.id})
-        SET e.name = event.name, e.details = event.details, e.chainId = event.chainId, e.function = event.function
+        MERGE (e:Event {id: randomUUID()})  // Create a single Event node
+        SET e.log = $events  // Store the full events array as a single property
         MERGE (t)-[:TRIGGERED_IN]->(e)
         RETURN t, e
         `,
         {
-          fromWallet,
-          toWallet,
-          amount,
-          timestamp,
-          chainId,
-          events,
+          hash: tx.hash,
+            from: tx.from,
+            to: tx.to,
+            value: tx.value.toString(),
+            timestamp: tx.timestamp,
+            events: events
         }
       );
   
-      // Execute the event's function after creating the transaction
-      for (const event of events) {
-        await handleEventFunction(event.function); // Pass the function string to be executed
-      }
+    //   // Execute the event's function after creating the transaction
+    //   for (const event of events) {
+    //     await handleEventFunction(event.function); // Pass the function string to be executed
+    //   }
   
       return result.records[0];
     } finally {
-      await session.close();
+        
     }
   };

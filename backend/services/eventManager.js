@@ -15,18 +15,22 @@ async function getEventsByTransactionHash(txHash) {
         console.log("Fetching events for transaction:", txHash);
       // Get transaction receipt
       const receipt = await provider.getTransactionReceipt(txHash);
-      console.log(receipt.logs);
       
       if (!receipt) {
         console.log("Transaction not found or not yet mined");
         return;
+      }
+      for(const log of receipt.logs) {
+        console.log(log);
+        const parsedLog = contract.interface.parseLog(log);
+        console.log(parsedLog);
       }
   
       // Parse logs
       const logs = receipt.logs.map(log => {
         try {
             const parsedLog = contract.interface.parseLog(log);
-          return contract.interface.parseLog(log);
+          return parsedLog;
         } catch (e) {
           // Log is not from this contract or doesn't match ABI
           console.log("Not the event you want");
@@ -34,11 +38,7 @@ async function getEventsByTransactionHash(txHash) {
       }).filter(log => log !== null);
   
       // Print parsed events
-      logs.forEach(log => {
-        console.log(`Event: ${log.name}`);
-        console.log("Arguments:", log.args);
-        console.log("---");
-      });
+     
   
     } catch (error) {
       console.error("Error fetching events:", error);

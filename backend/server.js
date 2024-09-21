@@ -1,12 +1,15 @@
 import express from 'express';
-const app = express();
+import bodyParser from 'body-parser';
 import { calldB } from './db/neo4jdriver.js';
 import { initializeGraphqlServer } from './services/neo4jinstance.js';
 import { traceFundFlow } from './services/etherscanService.js';
 import getEventsByTransactionHash from './services/eventManager.js';
-app.use(express.json());
+import cors from 'cors';
+import router from './routes/routes.js';
+const app = express();
 
-const PORT = process.env.PORT || 5173;
+
+const PORT = process.env.PORT || 4000;
 
 
 
@@ -25,7 +28,15 @@ const txHash = "0x4c954f24f4cf94e1ed1ce2d5d788eded98b3d873f0b06c07c44694300a1ba9
 
 
 
-
+app.use(
+    cors({
+      origin: "httplocalhost:3000",
+    })
+  );
+  app.use(bodyParser.urlencoded({ extended: true }));
+  app.use(bodyParser.json());
+  
+  app.use("/", router);
 
 app.listen(PORT, () => {
     console.log(`Server is running on port ${PORT}`);

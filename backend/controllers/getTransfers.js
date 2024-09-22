@@ -1,12 +1,18 @@
 // routes/transfers.js
 import express from 'express';
 import axios from 'axios';
+import dotenv from 'dotenv'
+dotenv.config({
+  path: '.env',
+  debug: true,
+  encoding: 'utf8',
+})
 
 const router = express.Router();
 let cachedData = [];
 
 const postTransfers = async(req, res) => {
-  const apiKey = "R2dr5jjQAxHwg4LMc5RSGgfNvpN0uXGE";
+  const apiKey = `${process.env.ARKHAM_API_KEY}`;
   const { base, tokens, flow } = req.body;
   console.log(req.body)
 

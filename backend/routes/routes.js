@@ -1,6 +1,5 @@
 import express from 'express';
 import getTransfers from '../controllers/getTransfers.js';
-import deleteTransfers from '../controllers/deleteTransfers.js';
 
 const router = express.Router();
 

@@ -3,40 +3,7 @@ import express from 'express';
 import axios from 'axios';
 
 const router = express.Router();
-let data = [];
-
-// Get transfers route
-const getTransfers = async (req, res) => {
-  const apiKey = "R2dr5jjQAxHwg4LMc5RSGgfNvpN0uXGE";
-  const { base, tokens, flow } = req.query;
-
-  const url = 'https://api.arkhamintelligence.com/transfers';
-
-  const querystring = {
-    "base": "binance",
-    "tokens": "usd-coin",
-    "flow": "out",
-  };
-
-  try {
-    const response = await axios.get(url, {
-      headers: { 'API-Key': apiKey },
-      params: querystring
-    });
-    
-   
-
-    res.status(200).json({data: response.data});
-
-    // Add the response data to the 'data' array
-    data.push(response.data);
-
-    // Send the response back to the client
-  } catch (error) {
-    console.error('Error fetching transfers:', error.message);
-    res.status(500).json({ error: error.message });
-  }
-};
+let cachedData = [];
 
 const postTransfers = async(req, res) => {
   const apiKey = "R2dr5jjQAxHwg4LMc5RSGgfNvpN0uXGE";
@@ -58,11 +25,11 @@ const postTransfers = async(req, res) => {
     });
     
    
-
+    
     res.status(200).json({data: response.data});
 
     // Add the response data to the 'data' array
-    data.push(response.data);
+    cachedData.push(response.data);
 
     // Send the response back to the client
   } catch (error) {
@@ -71,11 +38,40 @@ const postTransfers = async(req, res) => {
   }
 }
 
+// Get transfers route
+const getTransfers = async (req, res) => {
+  const { transactionHash } = req.body;  // Get the transactionHash from the request query parameters
+
+  try {
+    // Check if the transactionHash is provided
+    if (!transactionHash) {
+      return res.status(400).json({ message: "Missing required parameter: transactionHash" });
+    }
+
+    // Filter the cached data based on transactionHash
+    const filteredTransfers = cachedData.flatMap(item => item.transfers || []).filter(
+      transfer => transfer.transactionHash === transactionHash
+    );
+
+    if (filteredTransfers.length === 0) {
+      return res.status(404).json({ message: "No transfers found for the provided transactionHash" });
+    }
+
+    // Send the filtered transfers back to the client
+    res.json(filteredTransfers);
+  } catch (error) {
+    console.error('Error retrieving transfers:', error.message);
+    res.status(500).json({ error: error.message });
+  }
+};
+
+
+
 // Delete transfers route
 const deleteTransfers = async (req, res) => {
   try {
     // Clear all data in the cache
-    data = [];
+    cachedData = [];
     console.log("Deleted all cached transfers data");
 
     // Send a confirmation response

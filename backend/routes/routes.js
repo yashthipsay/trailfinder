@@ -3,6 +3,7 @@ import getTransfers from '../controllers/getTransfers.js';
 import getSwaps from '../controllers/swapController.js';
 import getAddressTxns from '../controllers/getAddressTxns.js';
 import getTokenVolume from '../controllers/getTokenVolume.js';
+import getPortfolio from '../controllers/portfolio.js';
 
 
 const router = express.Router();
@@ -25,7 +26,9 @@ router.get('/tokenVolume', getTokenVolume.getTokenVolume);
 router.post('/tokenVolume', getTokenVolume.postTokenVolume);
 router.delete('/tokenVolume', getTokenVolume.deleteTokenVolume);
 
-
+router.get('/portfolio/timeseries', getPortfolio.getPortfolioTimeSeries);
+router.post('/portfolio/timeseries', getPortfolio.postPortfolioTimeSeries);
+router.delete('/portfolio/timeseries', getPortfolio.deletePortfolioTimeSeries);
 
 
 export default router;

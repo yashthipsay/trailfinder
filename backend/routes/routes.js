@@ -2,6 +2,7 @@ import express from 'express';
 import getTransfers from '../controllers/getTransfers.js';
 import getSwaps from '../controllers/swapController.js';
 import getAddressTxns from '../controllers/getAddressTxns.js';
+import getTokenVolume from '../controllers/getTokenVolume.js';
 
 
 const router = express.Router();
@@ -19,6 +20,10 @@ router.delete('/swaps', getSwaps.deleteSwaps);
 router.get('/addressTxns', getAddressTxns.getAddressIntelligence);
 router.post('/addressTxns', getAddressTxns.postAddressIntelligence);
 router.delete('/addressTxns', getAddressTxns.deleteAddressIntelligence);
+
+router.get('/tokenVolume', getTokenVolume.getTokenVolume);
+router.post('/tokenVolume', getTokenVolume.postTokenVolume);
+router.delete('/tokenVolume', getTokenVolume.deleteTokenVolume);
 
 
 

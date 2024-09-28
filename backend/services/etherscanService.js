@@ -9,7 +9,7 @@ dotenv.config({
 import getEventsByTransactionHash from "./eventManager.js";
 
 const etherscanProvider = new EtherscanProvider("homestead", `${process.env.ETHERSCAN_API_KEY}`);
-const recursionLimit = 2;
+const recursionLimit = 4;
 let driver = getDriver();
 
 export const traceFundFlow = async (

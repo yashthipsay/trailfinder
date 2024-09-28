@@ -4,6 +4,7 @@ import { Neo4jGraphQL } from "@neo4j/graphql";
 import neo4j from "neo4j-driver";
 
 
+
 const typeDefs = `#graphql
 type Wallet {
   address: ID! @id
@@ -82,9 +83,102 @@ export const initializeGraphqlServer = async () => {
 
 const driver = neo4j.driver(URI, neo4j.auth.basic(USER, PASSWORD));
 
+const resolvers = {
+  Query: {
+    wallets: async () => {
+      const session = driver.session();  // Use existing driver
+      try {
+        const result = await session.run(`
+          MATCH (w:Wallet)
+          RETURN w
+        `);
+
+        const wallets = result.records.map(record => record.get('w').properties);
+
+        // Return an array, even if it's empty
+        return wallets.length ? wallets : [];
+      } catch (error) {
+        console.error('Error fetching wallets:', error);
+        throw new Error('Failed to fetch wallets');
+      } finally {
+        await session.close(); // Close session after query
+      }
+    },
+    transactions: async () => {
+      const session = driver.session();  // Use existing driver
+      try {
+        const result = await session.run(`
+          MATCH (t:Transaction)
+          RETURN t
+        `);
+
+        const transactions = result.records.map(record => record.get('t').properties);
+
+        // Return an array, even if it's empty
+        return transactions.length ? transactions : [];
+      } catch (error) {
+        console.error('Error fetching transactions:', error);
+        throw new Error('Failed to fetch transactions');
+      } finally {
+        await session.close();  // Close session after query
+      }
+    }
+  },
+  Mutation: {
+    addWallet: async (_, { address, chainId }) => {
+      const session = driver.session();  // Use existing driver
+      try {
+        const result = await session.run(
+          `MERGE (w:Wallet {address: $address, chainId: $chainId})
+           RETURN w`,
+          { address, chainId }
+        );
+
+        const wallet = result.records[0]?.get('w').properties;
+
+        if (!wallet) {
+          throw new Error('Wallet creation failed.');
+        }
+        return wallet;
+      } catch (error) {
+        console.error('Error adding wallet:', error);
+        throw new Error('Failed to add wallet');
+      } finally {
+        await session.close(); // Close session after mutation
+      }
+    },
+    addTransaction: async (_, { fromWallet, toWallet, amount, timestamp, chainId }) => {
+      const session = driver.session();  // Use existing driver
+      try {
+        const result = await session.run(
+          `MATCH (from:Wallet {address: $fromWallet})
+           MATCH (to:Wallet {address: $toWallet})
+           MERGE (t:Transaction {id: randomUUID(), amount: $amount, timestamp: $timestamp, chainId: $chainId})
+           MERGE (from)-[:SENT_FROM]->(t)-[:SENT_TO]->(to)
+           RETURN t`,
+          { fromWallet, toWallet, amount, timestamp, chainId }
+        );
+
+        const transaction = result.records[0]?.get('t').properties;
+
+        if (!transaction) {
+          throw new Error('Transaction creation failed.');
+        }
+        return transaction;
+      } catch (error) {
+        console.error('Error adding transaction:', error);
+        throw new Error('Failed to add transaction');
+      } finally {
+        await session.close(); // Close session after mutation
+      }
+    }
+  }
+};
+
+
 let neoSchema;
 try{
-neoSchema = new Neo4jGraphQL({ typeDefs, driver });
+neoSchema = new Neo4jGraphQL({ typeDefs, driver, resolvers });
 } catch(err) {
     console.log(`Error: ${err.data}`);
     await driver.close();

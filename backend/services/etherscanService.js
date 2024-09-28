@@ -97,16 +97,16 @@ const addTransaction = async (session, tx, events) => {
     try {
       const result = await session.run(
         `
-        MERGE (t:Transaction {id: randomUUID()})
-        SET t.value = $value, t.timestamp = $timestamp
-        MERGE (a1:Wallet {address: $from})
-        MERGE (a2:Wallet {address: $to})
-        MERGE (a1)-[:SENT_FROM]->(t)-[:SENT_TO]->(a2)
-        WITH t
-        MERGE (e:Event {id: randomUUID()})  // Create a single Event node
-        SET e.log = $events  // Store the full events array as a single property
-        MERGE (t)-[:TRIGGERED_IN]->(e)
-        RETURN t, e
+         MERGE (t:Transaction {id: randomUUID()})
+            SET t.value = $value, t.timestamp = $timestamp, t.from = $from, t.to = $to 
+            MERGE (a1:Wallet {address: $from})
+            MERGE (a2:Wallet {address: $to})
+            MERGE (a1)-[:SENT_FROM]->(t)-[:SENT_TO]->(a2)
+            WITH t
+            MERGE (e:Event {id: randomUUID()})  // Create a single Event node
+            SET e.log = $events  // Store the full events array as a single property
+            MERGE (t)-[:TRIGGERED_IN]->(e)
+            RETURN t, e
         `,
         {
           hash: tx.hash,
@@ -122,7 +122,7 @@ const addTransaction = async (session, tx, events) => {
     //   for (const event of events) {
     //     await handleEventFunction(event.function); // Pass the function string to be executed
     //   }
-  
+      console.log(result.records);
       return result.records[0];
     } finally {
         

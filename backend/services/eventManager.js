@@ -6,7 +6,7 @@ const abi = [`event TokensDeposited(address indexed sourceNetworkTokenAddress,ui
 const otherAbi = [`event Transfer (address from, address to, uint256 value)`];
 const contractInterface = new ethers.Interface(abi);
 const provider = new ethers.JsonRpcProvider("https://mainnet.infura.io/v3/a6cd886ad67c44bdb86bb5ab0797f5b4");
-const bridgeTokenAddress = "0xf48a9308f6326284FF329A9E1ee8C9b73F94518e";
+const bridgeTokenAddress = "0xCBCe172d7af2616804ab5b2494102dAeC47B2635";
 const contract = new ethers.Contract(bridgeTokenAddress, abi, provider);
 // const decodeData = contractInterface.parseTransaction 
 

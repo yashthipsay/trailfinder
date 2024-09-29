@@ -12,6 +12,9 @@ const etherscanProvider = new EtherscanProvider("homestead", `${process.env.ETHE
 const recursionLimit = 4;
 let driver = getDriver();
 
+const WORMHOLE_CCTP_ADDRESS = "0xAaDA05BD399372f0b0463744C09113c137636f6a".toLowerCase();
+const WORMHOLE_API_URL = "https://api.wormholescan.io/api/v1/transactions/";
+
 export const traceFundFlow = async (
     walletAddress,
     visitedAddresses = new Set(),

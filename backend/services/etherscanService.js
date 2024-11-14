@@ -100,6 +100,12 @@ const fetchWormholeTransaction = async (address) => {
 const addWormholeTransaction = async (session, tx, wormholeData, events) => {
     console.log("Wormhole data:", wormholeData);
     try {
+        const flattenedWormholeData = {
+            emitterChain: wormholeData.emitterChain,
+            emitterAddress: wormholeData.emitterAddress,
+            emitterNativeAddress: wormholeData.emitterNativeAddress,
+            tokenAmount: wormholeData.tokenAmount,
+        };
         const result = await session.run(
             `
             MERGE (t:Transaction {hash: $hash})
@@ -126,7 +132,7 @@ const addWormholeTransaction = async (session, tx, wormholeData, events) => {
                 timestamp: tx.timestamp,
                 events: events,
                 wormholeId: wormholeData.id.toString(),
-                wormholeData: wormholeData,
+                wormholeData: flattenedWormholeData,
             }
         );
         console.log("Wormhole transaction added:", result.records[0]);

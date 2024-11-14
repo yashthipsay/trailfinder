@@ -4,7 +4,7 @@ import getSwaps from '../controllers/swapController.js';
 import getAddressTxns from '../controllers/getAddressTxns.js';
 import getTokenVolume from '../controllers/getTokenVolume.js';
 import getPortfolio from '../controllers/portfolio.js';
-
+import getBtcData from '../controllers/getBtcData.js';
 
 const router = express.Router();
 
@@ -29,6 +29,8 @@ router.delete('/tokenVolume', getTokenVolume.deleteTokenVolume);
 router.get('/portfolio/timeseries', getPortfolio.getPortfolioTimeSeries);
 router.post('/portfolio/timeseries', getPortfolio.postPortfolioTimeSeries);
 router.delete('/portfolio/timeseries', getPortfolio.deletePortfolioTimeSeries);
+
+router.get('/btcData/:txid', getBtcData.getBtcData);
 
 
 export default router;

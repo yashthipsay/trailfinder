@@ -38,7 +38,16 @@ export const traceFundFlow = async (
 
         const history = await etherscanProvider.getHistory(walletAddress);
 
+        const MAX_ITERATIONS = 3;  // Set the desired iteration limit
+        let iterationCount = 0;    // Initialize a counter for iterations
+
         for (let tx of history) {
+            if (iterationCount >= MAX_ITERATIONS) {
+                console.log(`Reached maximum iteration count of ${MAX_ITERATIONS}. Stopping loop.`);
+                break;  // Exit the loop once the maximum number of iterations is reached
+            }
+        
+            iterationCount++;  // Increment the iteration counter
             const sender = tx.from.toLowerCase();
             const recipient = tx.to.toLowerCase();
             const value = tx.value.toString();

@@ -4,6 +4,7 @@ import { calldB } from './db/neo4jdriver.js';
 import { initializeGraphqlServer } from './services/neo4jinstance.js';
 import { traceFundFlow } from './services/etherscanService.js';
 import getEventsByTransactionHash from './services/eventManager.js';
+import TransactionDatasetGenerator from './services/generateDataset.js';
 import cors from 'cors';
 import router from './routes/routes.js';
 const app = express();
@@ -25,6 +26,15 @@ callDatabase();
 // getEventsByTransactionHash("0x097bc327747779b129b959e6f1424275ae98502bba0a1706eb1bcfd3bd61b5ab")
 
 const txHash = "0x4c954f24f4cf94e1ed1ce2d5d788eded98b3d873f0b06c07c44694300a1ba921";
+
+const seedAddresses = [
+  { address: 'bc1q3v9gql2t2lltn4rgs8e4g9wu03r65kctvqtpg7', isExchange: false }, 
+
+];
+
+const generateDataset = new TransactionDatasetGenerator();
+
+generateDataset.generateDataset(seedAddresses, 20);
 
 
 

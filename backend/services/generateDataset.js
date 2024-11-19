@@ -1,6 +1,9 @@
 import axios from 'axios';
 import fs from 'fs/promises';
 import csv from 'csv-writer';
+import Websocket from 'ws';
+
+
 
 const BASE_URL = 'https://btcscan.org/api';
 
@@ -13,7 +16,7 @@ class TransactionDatasetGenerator {
         this.addresses = new Set();
         this.relationships = [];
         this.rateLimitDelay = 500; // 1 seconds delay between requests
-        
+        this.websocket = null;
         this.createCsvWriter = csv.createObjectCsvWriter({
             path: 'transaction_dataset.csv',
             header: [
@@ -36,13 +39,13 @@ class TransactionDatasetGenerator {
     async makeRateLimitedRequest(url) {
         try {
             const response = await axios.get(url);
-            await sleep(2000); // 2 second delay after each request
+            await sleep(50); // 2 second delay after each request
             console.log(response.data);
             return response.data;
         } catch (error) {
             if (error.response?.status === 429) {
-                console.log('Rate limit hit, waiting 2 seconds...');
-                await sleep(2000);
+                console.log('Rate limit hit, waiting few seconds...');
+                await sleep(7000);
                 return this.makeRateLimitedRequest(url); // Retry the request
             }
             throw error;
@@ -91,6 +94,19 @@ class TransactionDatasetGenerator {
             is_exchange: false,  // Will be updated based on patterns
             cluster_label: 0     // Will be updated based on analysis
         };
+    }
+
+    connectWebsocket() {
+        this.websocket = new WebSocket('wss://ws.blockchain.info/inv');
+        this.websocket.on('open', () => {
+            console.log('Websocket connection opened');
+            this.websocket.send(JSON.stringify({op: 'unconfirmed_sub'}));
+        });
+
+        this.websocket.on('message', async (data) => {
+            const tx = JSON.parse(data);
+            console.log('New unconfirmed transaction:', tx);
+        })
     }
 
     async generateDataset(seedAddresses, maxTransactions) {

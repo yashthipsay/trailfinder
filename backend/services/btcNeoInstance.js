@@ -13,6 +13,7 @@ type Transaction {
   fee: Int 
   confirmed: Boolean 
   blockHeight: Int 
+  involvedCex: CentralizedExchange @relationship(type: "INVOLVES", direction: OUT)
 }
 
 type Vin {
@@ -31,9 +32,21 @@ type Prevout {
   address: String 
 }
 
+type CentralizedExchange {
+name: String!
+website: String
+twitter: String
+crunchbase: String
+linkedin: String
+}
+
 type Query {
   transaction(hash: ID!): Transaction 
   transactions: [Transaction!]! 
+}
+
+type Mutation {
+  mapCexTransaction(fromAddress: String!, toAddress: String!): CentralizedExchange!
 }
 `
 
@@ -76,6 +89,21 @@ const resolvers = {
             { hash: parent.hash }
           );
           return result.records[0]?.get("totalVoutValue") || 0;
+        } finally {
+          await session.close();
+        }
+      },
+      involvedCex: async (parent, args, context) => {
+        const session = context.driver.session();
+        try{
+          const result = await session.run(
+            `
+            MATCH(t:Transaction {hash: $hash})-[:INVOLVES]->(cex:CentralizedExchange)
+            RETURN cex
+            `,
+            { hash: parent.hash }
+          );
+          return result.records.map((record) => record.get("cex").properties);
         } finally {
           await session.close();
         }
@@ -131,6 +159,67 @@ const resolvers = {
         }
       },
     },
+    Mutation: {
+      async mapCexTransaction(_, { fromAddress, toAddress }, context) {
+        const session = context.driver.session();
+  
+        try {
+          // Call the existing getEntityTransfers function
+          const data = await getEntityTransfers(fromAddress, toAddress);
+  
+          if (!data || !data.transfers || data.transfers.length === 0) {
+            throw new Error(`No transactions found between ${fromAddress} and ${toAddress}`);
+          }
+  
+          // Check if any transfer involves a `cex`
+          const transfer = data.transfers.find(
+            (t) =>
+              t.toAddress &&
+              t.toAddress.arkhamEntity &&
+              t.toAddress.arkhamEntity.type === "cex"
+          );
+  
+          if (!transfer) {
+            throw new Error(`No transactions involving a centralized exchange found.`);
+          }
+  
+          const cexEntity = transfer.toAddress.arkhamEntity;
+  
+          // Use Cypher to map transaction to the CentralizedExchange node
+          const query = `
+            MATCH (t:Transaction {hash: $hash})
+            MERGE (cex:CentralizedExchange {
+              name: $name,
+              website: $website,
+              twitter: $twitter,
+              crunchbase: $crunchbase,
+              linkedin: $linkedin
+            })
+            MERGE (t)-[:INVOLVES]->(cex)
+            RETURN cex
+          `;
+  
+          const params = {
+            hash: transfer.txid,
+            name: cexEntity.name,
+            website: cexEntity.website || null,
+            twitter: cexEntity.twitter || null,
+            crunchbase: cexEntity.crunchbase || null,
+            linkedin: cexEntity.linkedin || null,
+          };
+  
+          const result = await session.run(query, params);
+  
+          return result.records[0].get("cex").properties;
+        } catch (error) {
+          console.error("Error mapping transaction to CentralizedExchange:", error.message);
+          throw error;
+        } finally {
+          await session.close();
+        }
+      },
+    },
+    
 }
 
 let neoSchema;

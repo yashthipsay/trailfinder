@@ -40,7 +40,6 @@ class TransactionDatasetGenerator {
         try {
             const response = await axios.get(url);
             await sleep(50); // 2 second delay after each request
-            console.log(response.data);
             return response.data;
         } catch (error) {
             if (error.response?.status === 429) {
@@ -49,6 +48,22 @@ class TransactionDatasetGenerator {
                 return this.makeRateLimitedRequest(url); // Retry the request
             }
             throw error;
+        }
+    }
+
+    // https://api.arkhamintelligence.com/intelligence/address/${address}?chain=${chain}
+
+    async getEntityType(address, chain) {
+        const apiKey = `${process.env.ARKHAM_API_KEY}`;
+        try {
+            const response = await axios.get(`https://api.arkhamintelligence.com/intelligence/address/${address}`, {
+                headers: { 'API-Key': apiKey },
+                params: {chain}
+            });
+            console.log(response.data.arkhamEntity.type);
+            return response.data.arkhamEntity.type;
+        } catch (error) {
+           return null;
         }
     }
 

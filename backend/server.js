@@ -45,7 +45,7 @@ callDatabase();
 
 // **********BTC FLOW MAPPING**********
 const btcFlowMapper = new mapBtcFlow();
-const startAddress = 'bc1q3v9gql2t2lltn4rgs8e4g9wu03r65kctvqtpg7';
+const startAddress = 'bc1qqsa6ac4aeqf6h0xrfea9dj73khjxe8twu4el53g6ln8es9acmn2qddza00';
 const MAX_DEPTH = 3;
 
 btcFlowMapper

@@ -24,40 +24,41 @@ const callDatabase = async () => {
 
 initializeBtcNeo4jServer();
 callDatabase();
-// traceFundFlow("0x307834c338866516DB9f5784aBc4C43484a8363a", new Set(), 1).then(() => {
-//     console.log('Fund flow tracing completed.');
-// })
-// getEventsByTransactionHash("0x097bc327747779b129b959e6f1424275ae98502bba0a1706eb1bcfd3bd61b5ab")
+// 0x307834c338866516DB9f5784aBc4C43484a8363a
+// getEventsByTransactionHash("0x1f87af615627d6d640e41bfb09438b9faa2ae92bf53b6565de41441e39a5325e")
+traceFundFlow("0x0a6c69327d517568E6308F1E1CD2fD2B2b3cd4BF", new Set(), 1).then(() => {
+    console.log('Fund flow tracing completed.');
+})
 
 // **********DATASET GENERATION**********
 
 // const txHash = "0x4c954f24f4cf94e1ed1ce2d5d788eded98b3d873f0b06c07c44694300a1ba921";
 
 // const seedAddresses = [
-//   { address: 'bc1q3v9gql2t2lltn4rgs8e4g9wu03r65kctvqtpg7', isExchange: false }, 
+//   { address: '3D1xsYjkitAQR3MmgP5xyvs3vKNSiu7vot', isExchange: false }, 
 
 // ];
 
 // const generateDataset = new TransactionDatasetGenerator();
 
-// generateDataset.generateDataset(seedAddresses, 100);
+// generateDataset.generateDataset(seedAddresses, 10000);
 
 
 // **********BTC FLOW MAPPING**********
-const btcFlowMapper = new mapBtcFlow();
-const startAddress = 'bc1qqsa6ac4aeqf6h0xrfea9dj73khjxe8twu4el53g6ln8es9acmn2qddza00';
-const MAX_DEPTH = 3;
+// const btcFlowMapper = new mapBtcFlow();
+// const startAddress = 'bc1qqsa6ac4aeqf6h0xrfea9dj73khjxe8twu4el53g6ln8es9acmn2qddza00';
+// const MAX_DEPTH = 3;
 
-btcFlowMapper
-     .startMapping(startAddress, MAX_DEPTH)
-     .then(() => {
-      console.log('BTC flow mapping completed.');
-      return btcFlowMapper.driver.close();
-     })
-     .catch((error) => {
-      console.error("Error during tracing:", error);
-      return btcFlowMapper.driver.close();
-    });
+// btcFlowMapper
+//      .startMapping(startAddress, MAX_DEPTH)
+//      .then(() => {
+//       console.log('BTC flow mapping completed.');
+//       return btcFlowMapper.driver.close();
+//      })
+//      .catch((error) => {
+//       console.error("Error during tracing:", error);
+//       return btcFlowMapper.driver.close();
+//     });
 
 
 app.use(

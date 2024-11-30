@@ -21,9 +21,8 @@ async function getEventsByTransactionHash(txHash) {
         return;
       }
       for(const log of receipt.logs) {
-        console.log(log);
         const parsedLog = contract.interface.parseLog(log);
-        console.log(parsedLog);
+        console.log("Events emitted", parsedLog);
       }
   
       // Parse logs

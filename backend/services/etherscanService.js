@@ -15,6 +15,7 @@ let driver = getDriver();
 const WORMHOLE_CCTP_ADDRESS = "0xAaDA05BD399372f0b0463744C09113c137636f6a".toLowerCase();
 const WORMHOLE_API_URL = "https://api.wormholescan.io/api/v1/transactions/";
 const BRIDGE_TOKEN_ADDRESS = "0xCBCe172d7af2616804ab5b2494102dAeC47B2635".toLowerCase();
+const WORMHOLE_TOKENBRIDGE_PORTAL = "0x3ee18B2214AFF97000D974cf647E7C347E8fa585".toLowerCase();
 
 export const traceFundFlow = async (
     walletAddress,
@@ -38,7 +39,7 @@ export const traceFundFlow = async (
 
         const history = await etherscanProvider.getHistory(walletAddress);
 
-        const MAX_ITERATIONS = 3;  // Set the desired iteration limit
+        const MAX_ITERATIONS = 100;  // Set the desired iteration limit
         let iterationCount = 0;    // Initialize a counter for iterations
 
         for (let tx of history) {
@@ -55,7 +56,7 @@ export const traceFundFlow = async (
             const events = await getEventsByTransactionHash(hash) || [];
             
             // Check if the recipient is the Wormhole CCTP address
-            if (recipient === WORMHOLE_CCTP_ADDRESS) {
+            if (recipient === WORMHOLE_CCTP_ADDRESS || recipient === WORMHOLE_TOKENBRIDGE_PORTAL) {
                 console.log(`Detected transfer to Wormhole CCTP: ${hash}`);
                 const wormholeData = await fetchWormholeTransaction(sender);
                 if (wormholeData) {

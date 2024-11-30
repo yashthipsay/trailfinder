@@ -2,10 +2,12 @@ import axios from 'axios';
 import fs from 'fs/promises';
 import csv from 'csv-writer';
 import Websocket from 'ws';
+import { title } from 'process';
 
 
 
-const BASE_URL = 'https://btcscan.org/api';
+const BTCSCAN_BASE_URL = 'https://btcscan.org/api';
+const ARKHAM_BASE_URL = 'https://api.arkhamintelligence.com';
 
 // Sleep function for rate limiting
 const sleep = (ms) => new Promise(resolve => setTimeout(resolve, ms));
@@ -21,6 +23,16 @@ class TransactionDatasetGenerator {
             path: 'transaction_dataset.csv',
             header: [
                 {id: 'txid', title: 'transaction_hash'},
+                {id: 'transactionIndex', title: 'transaction_index'},
+                {id: 'blockhash', title: 'block_hash'},
+                {id: 'blockheight', title: 'block_height'},
+                {id: 'blocktime', title: 'block_time'},
+                {id: 'historicalusdprice', title: 'historical_usd_price'},
+                {id: 'from', title: 'from'},
+                {id: 'fromchain', title: 'from_chain'},
+                {id: 'to', title: 'to'},
+                {id: 'tochain', title: 'to_chain'},
+                {id: 'type', title: 'type'},
                 {id: 'timestamp', title: 'timestamp'},
                 {id: 'indegree', title: 'indegree'},
                 {id: 'outdegree', title: 'outdegree'},
@@ -68,23 +80,55 @@ class TransactionDatasetGenerator {
     }
 
     async fetchAddressTransactions(address) {
-        try {
-            const data = await this.makeRateLimitedRequest(`${BASE_URL}/address/${address}/txs`);
-            return data || [];
-        } catch (error) {
-            console.error(`Error fetching transactions for address ${address}:`, error.message);
-            return [];
-        }
+        let transactions = [];
+        let lastSeenTxid = null;
+
+        while(transactions.length < 1000) {
+
+            try {
+                const url = `${BTCSCAN_BASE_URL}/address/${address}/txs/chain${
+                    lastSeenTxid ? `/${lastSeenTxid}` : ""
+                }`;
+    
+                // Fetch data
+                const data = await this.makeRateLimitedRequest(url);
+                if(!data || data.length === 0) {
+                    break;
+                }
+
+                // Append transactions
+                transactions = transactions.concat(data);
+
+                // Update last seen txid
+                lastSeenTxid = data[data.length - 1]?.txid;
+
+                // Stop if fewer than 25 transactions are returned (last page)
+            if (data.length < 25) break;
+
+                } catch (error) {
+                    console.error(`Error fetching transactions for address ${address}:`, error.message);
+                    break;
+                }
+            }
+            return transactions.slice(0, 1000);
     }
 
     async fetchTransactionDetails(txid) {
         try {
-            return await this.makeRateLimitedRequest(`${BASE_URL}/tx/${txid}`);
+            return await this.makeRateLimitedRequest(`${BTCSCAN_BASE_URL}/tx/${txid}`);
         } catch (error) {
             console.error(`Error fetching transaction ${txid}:`, error.message);
             return null;
         }
     }
+    /*
+    async fetchArkhamDetails() {
+        try{
+            return await this
+        }
+    }
+    */ 
+
 
     calculateMetrics(transaction) {
         const inputs = transaction.vin || [];
@@ -111,6 +155,48 @@ class TransactionDatasetGenerator {
         };
     }
 
+    async getArkhamTxDetails(txid) {
+        const apiKey = `${process.env.ARKHAM_API_KEY}`;
+        const baseurl = `${ARKHAM_BASE_URL}/tx/${txid}`;
+
+        try{
+            const response = await axios.get(baseurl, {
+                headers: { 'API-Key': apiKey }
+        });
+
+        const tx = response.data.bitcoin;
+
+        // Return only the necessary values with fallback to "NA"
+
+        return {
+            transactionIndex: tx.transactionIndex || 'NA',
+            blockhash: tx.blockHash || 'NA',
+            blockheight: tx.blockHeight || 'NA',
+            blocktime: tx.blockTimestamp || 'NA',
+            historicalusdprice: tx.inputUSD || 'NA',
+            from: tx.inputs?.[0]?.address?.address || 'NA',
+            fromchain: tx.inputs?.[0]?.address?.chain || 'NA',
+            to: tx.outputs?.[0]?.address?.address || 'NA',
+            tochain: tx.outputs?.[0]?.address?.chain || 'NA',
+            type: tx.type || 'NA'
+        };
+    } catch (error) {
+        console.error('Error fetching Arkham transaction details:', error.message);
+        return {
+            transactionIndex: "NA",
+                blockhash: "NA",
+                blockheight: "NA",
+                blocktime: "NA",
+                historicalusdprice: "NA",
+                from: "NA",
+                fromchain: "NA",
+                to: "NA",
+                tochain: "NA",
+                type: "NA",
+        };
+    }
+}
+
     connectWebsocket() {
         this.websocket = new WebSocket('wss://ws.blockchain.info/inv');
         this.websocket.on('open', () => {
@@ -131,25 +217,46 @@ const knownExchanges = new Set(seedAddresses.filter(addr => addr.isExchange));
 // Process each seed address
 for (const address of seedAddresses) {
     const transactions = await this.fetchAddressTransactions(address.address);
-    
+    let count = 0;
     // Process each transaction
-    for (const tx of transactions.slice(0, maxTransactions)) {
+    for (const tx of transactions.slice(1, 1000)) {
+        count++;
         if (this.transactions.has(tx.txid)){
             continue;
         }
+
+        // Fetch transaction details from Arkham API
+        const arkhamTxDetails = await this.getArkhamTxDetails(tx.txid);
+
         const txDetails = await this.fetchTransactionDetails(tx.txid);
         if (!txDetails) continue;
+
+        
         
         // Calculate metrics
         const metrics = this.calculateMetrics(txDetails);
+
+        const combinedMetrics = {
+            ...metrics,
+            transactionIndex: arkhamTxDetails.transactionIndex,
+            blockhash: arkhamTxDetails.blockhash,
+            blockheight: arkhamTxDetails.blockheight,
+            blocktime: arkhamTxDetails.blocktime,
+            historicalusdprice: arkhamTxDetails.historicalusdprice,
+            from: arkhamTxDetails.from,
+            fromchain: arkhamTxDetails.fromchain,
+            to: arkhamTxDetails.to,
+            tochain: arkhamTxDetails.tochain,
+            type: arkhamTxDetails.type
+        };
         
         // Update exchange flag if any address is a known exchange
-        metrics.is_exchange = txDetails.vout.some(output => 
+        combinedMetrics.is_exchange = txDetails.vout.some(output => 
             knownExchanges.has(output.scriptpubkey_address)
         );
         
         // Store transaction metrics
-        this.transactions.set(tx.txid, metrics);
+        this.transactions.set(tx.txid, combinedMetrics);
         
         // Store addresses
         txDetails.vin.forEach(input => {

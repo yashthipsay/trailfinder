@@ -157,8 +157,8 @@ class mapBtcFlow extends TransactionDatasetGenerator {
 
             await session.run(
               `
-              MERGE (t:Transaction {txid: $txid})
-              ON CREATE SET t.blockTimestamp = $blockTimestamp, t.unitValue = $unitValue, t.blockHash = $blockHash
+              MERGE (t:Transaction {hash: $txid})
+              ON CREATE SET t.blockTimestamp = $blockTimestamp, t.unitValue = $unitValue, t.blockHash = $blockHash, t.blockHeight = $blockHeight
               WITH t
               MATCH (cex:CentralizedExchange {name: $name})
               MERGE (t)-[:INVOLVES]->(cex)
@@ -168,7 +168,8 @@ class mapBtcFlow extends TransactionDatasetGenerator {
                 blockTimestamp: transfer.blockTimestamp,
                 unitValue: transfer.unitValue,
                 blockHash: transfer.blockHash,
-                name: cexEntity.name,
+                blockHeight: transfer.blockHeight,
+                name: cexEntity.name
               }
             );
             console.log(`Mapped transfer ${transfer.blockHash} to Neo4j`);
@@ -185,7 +186,7 @@ class mapBtcFlow extends TransactionDatasetGenerator {
       // Add the transaction node
       await session.run(
         `
-        MERGE (t:Transaction {txid: $txid})
+        MERGE (t:Transaction {hash: $txid})
         ON CREATE SET t.fee = $fee, t.confirmed = $confirmed
         RETURN t
         `,
@@ -203,7 +204,7 @@ class mapBtcFlow extends TransactionDatasetGenerator {
           await session.run(
             `
             MERGE (a:Address {address: $address})
-            MERGE (t:Transaction {txid: $txid})
+            MERGE (t:Transaction {hash: $txid})
             MERGE (a)-[:FUNDS {value: $value}]->(t)
             `,
             {
@@ -220,7 +221,7 @@ class mapBtcFlow extends TransactionDatasetGenerator {
         if (vout.scriptpubkey_address) {
           await session.run(
             `
-            MERGE (t:Transaction {txid: $txid})
+            MERGE (t:Transaction {hash: $txid})
             MERGE (a:Address {address: $address})
             MERGE (t)-[:OUTPUT {value: $value}]->(a)
             `,

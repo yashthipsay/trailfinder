@@ -5,7 +5,7 @@ import neo4j from "neo4j-driver";
 
 const typeDefs = `#graphql
 type Transaction {
-  hash: ID!
+  hash: String
   vin: [Vin!]! 
   vout: [Vout!]! 
   totalVinValue: Int! 

@@ -158,7 +158,7 @@ class mapBtcFlow extends TransactionDatasetGenerator {
             await session.run(
               `
               MERGE (t:Transaction {txid: $txid})
-              ON CREATE SET t.blockTimestamp = $blockTimestamp, t.unitValue = $unitValue
+              ON CREATE SET t.blockTimestamp = $blockTimestamp, t.unitValue = $unitValue, t.blockHash = $blockHash
               WITH t
               MATCH (cex:CentralizedExchange {name: $name})
               MERGE (t)-[:INVOLVES]->(cex)
@@ -167,10 +167,11 @@ class mapBtcFlow extends TransactionDatasetGenerator {
                 txid: transfer.txid,
                 blockTimestamp: transfer.blockTimestamp,
                 unitValue: transfer.unitValue,
+                blockHash: transfer.blockHash,
                 name: cexEntity.name,
               }
             );
-            console.log(`Mapped transfer ${transfer} to Neo4j`);
+            console.log(`Mapped transfer ${transfer.blockHash} to Neo4j`);
           } finally {
             await session.close();
           }

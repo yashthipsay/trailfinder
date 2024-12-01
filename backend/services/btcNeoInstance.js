@@ -6,49 +6,46 @@ import neo4j from "neo4j-driver";
 const typeDefs = `#graphql
 type Transaction {
   hash: String
-  vin: [Vin!]! 
-  vout: [Vout!]! 
-  totalVinValue: Int! 
-  totalVoutValue: Int! 
-  fee: Int 
-  confirmed: Boolean 
-  blockHeight: Int 
+  vin: [Vin]
+  vout: [Vout]
+  totalVinValue: Int!
+  totalVoutValue: Int!
+  fee: Int
+  confirmed: Boolean
+  blockHeight: Int
   involvedCex: CentralizedExchange @relationship(type: "INVOLVES", direction: OUT)
 }
 
 type Vin {
-  txid: String!
-  voutIndex: Int! 
-  prevout: Prevout!
+  txid: String
+  voutIndex: Int
+  value: Int
+  address: String
 }
 
 type Vout {
-  value: Int! 
-  address: String 
-}
-
-type Prevout {
-  value: Int!
-  address: String 
+  value: Int
+  address: String
 }
 
 type CentralizedExchange {
-name: String!
-website: String
-twitter: String
-crunchbase: String
-linkedin: String
+  name: String!
+  website: String
+  twitter: String
+  crunchbase: String
+  linkedin: String
 }
 
 type Query {
-  transaction(hash: ID!): Transaction 
-  transactions: [Transaction!]! 
+  transaction(hash: String): Transaction
+  transactions: [Transaction]
 }
 
 type Mutation {
   mapCexTransaction(fromAddress: String!, toAddress: String!): CentralizedExchange!
 }
 `;
+
 
 const URI = process.env.NEO4J_URI;
 const USER = process.env.NEO4J_USERNAME;
@@ -59,15 +56,15 @@ export const initializeBtcNeo4jServer = async () => {
 
   const resolvers = {
     Transaction: {
-      // Computed field for total value of all vin.prevout.value
+      // Computed field for total value of all vin values
       totalVinValue: async (parent, args, context) => {
         const session = driver.session();
         try {
           const result = await session.run(
             `
-                    MATCH (t:Transaction {hash: $hash})-[:HAS_VIN]->(vin:Vin)-[:PREVOUT]->(prevout:Prevout)
-                    RETURN sum(prevout.value) AS totalVinValue
-                    `,
+              MATCH (t:Transaction {hash: $hash})-[:FUNDS]->(vin:Vin)
+              RETURN sum(vin.value) AS totalVinValue
+            `,
             { hash: parent.hash }
           );
           return result.records[0]?.get("totalVinValue") || 0;
@@ -75,15 +72,15 @@ export const initializeBtcNeo4jServer = async () => {
           await session.close();
         }
       },
-
-      // Computed field for total value of all vout.value
+  
+      // Computed field for total value of all vout values
       totalVoutValue: async (parent, args, context) => {
         const session = driver.session();
         try {
           const result = await session.run(
             `
-            MATCH (t:Transaction {hash: $hash})-[:HAS_VOUT]->(vout:Vout)
-            RETURN sum(vout.value) AS totalVoutValue
+              MATCH (t:Transaction {hash: $hash})-[:OUTPUT]->(vout:Vout)
+              RETURN sum(vout.value) AS totalVoutValue
             `,
             { hash: parent.hash }
           );
@@ -92,13 +89,14 @@ export const initializeBtcNeo4jServer = async () => {
           await session.close();
         }
       },
+  
       involvedCex: async (parent, args, context) => {
         const session = driver.session();
         try {
           const result = await session.run(
             `
-            MATCH(t:Transaction {hash: $hash})-[:INVOLVES]->(cex:CentralizedExchange)
-            RETURN cex
+              MATCH (t:Transaction {hash: $hash})-[:INVOLVES]->(cex:CentralizedExchange)
+              RETURN cex
             `,
             { hash: parent.hash }
           );
@@ -108,7 +106,7 @@ export const initializeBtcNeo4jServer = async () => {
         }
       },
     },
-
+  
     Query: {
       // Resolver for a single transaction
       transaction: async (_, { hash }, context) => {
@@ -117,23 +115,20 @@ export const initializeBtcNeo4jServer = async () => {
           const result = await session.run(
             `
               MATCH (t:Transaction {hash: $hash})
-              OPTIONAL MATCH (t)-[:HAS_VIN]->(vin:Vin)-[:PREVOUT]->(prevout:Prevout)
-              OPTIONAL MATCH (t)-[:HAS_VOUT]->(vout:Vout)
-              RETURN t, collect(vin) AS vins, collect(vout) AS vouts, collect(prevout) AS prevouts
-              `,
+              OPTIONAL MATCH (vin:Vin)-[:FUNDS]->(t)
+              OPTIONAL MATCH (t)-[:OUTPUT]->(vout:Vout)
+              RETURN t, collect(vin) AS vins, collect(vout) AS vouts
+            `,
             { hash }
           );
-
+  
           if (result.records.length === 0) return null;
-
+  
           const record = result.records[0];
           const transaction = record.get("t").properties;
-          const vins = record.get("vins").map((vin, index) => ({
-            ...vin.properties,
-            prevout: record.get("prevouts")[index]?.properties,
-          }));
+          const vins = record.get("vins").map((vin) => vin.properties);
           const vouts = record.get("vouts").map((vout) => vout.properties);
-
+  
           return {
             ...transaction,
             vin: vins,
@@ -143,52 +138,61 @@ export const initializeBtcNeo4jServer = async () => {
           await session.close();
         }
       },
-
+  
       // Resolver for all transactions
       transactions: async (_, __, context) => {
         const session = driver.session();
         try {
-          const result = await session.run(`
-            MATCH (t:Transaction)
-            RETURN t
-          `);
-          return result.records.map((record) => record.get("t").properties);
+          const result = await session.run(
+            `
+              MATCH (t:Transaction)
+              OPTIONAL MATCH (vin:Vin)-[:FUNDS]->(t)
+              OPTIONAL MATCH (t)-[:OUTPUT]->(vout:Vout)
+              RETURN t, collect(vin) AS vins, collect(vout) AS vouts
+            `
+          );
+  
+          return result.records.map((record) => {
+            const transaction = record.get("t").properties;
+            const vins = record.get("vins").map((vin) => vin.properties);
+            const vouts = record.get("vouts").map((vout) => vout.properties);
+  
+            return {
+              ...transaction,
+              vin: vins,
+              vout: vouts,
+            };
+          });
         } finally {
           await session.close();
         }
       },
     },
+  
     Mutation: {
       async mapCexTransaction(_, { fromAddress, toAddress }, context) {
         const session = driver.session();
-
+  
         try {
-          // Call the existing getEntityTransfers function
           const data = await getEntityTransfers(fromAddress, toAddress);
-
+  
           if (!data || !data.transfers || data.transfers.length === 0) {
-            throw new Error(
-              `No transactions found between ${fromAddress} and ${toAddress}`
-            );
+            throw new Error(`No transactions found between ${fromAddress} and ${toAddress}`);
           }
-
-          // Check if any transfer involves a `cex`
+  
           const transfer = data.transfers.find(
             (t) =>
               t.toAddress &&
               t.toAddress.arkhamEntity &&
               t.toAddress.arkhamEntity.type === "cex"
           );
-
+  
           if (!transfer) {
-            throw new Error(
-              `No transactions involving a centralized exchange found.`
-            );
+            throw new Error(`No transactions involving a centralized exchange found.`);
           }
-
+  
           const cexEntity = transfer.toAddress.arkhamEntity;
-
-          // Use Cypher to map transaction to the CentralizedExchange node
+  
           const query = `
             MATCH (t:Transaction {hash: $hash})
             MERGE (cex:CentralizedExchange {
@@ -201,7 +205,7 @@ export const initializeBtcNeo4jServer = async () => {
             MERGE (t)-[:INVOLVES]->(cex)
             RETURN cex
           `;
-
+  
           const params = {
             hash: transfer.txid,
             name: cexEntity.name,
@@ -210,22 +214,17 @@ export const initializeBtcNeo4jServer = async () => {
             crunchbase: cexEntity.crunchbase || null,
             linkedin: cexEntity.linkedin || null,
           };
-
+  
           const result = await session.run(query, params);
-
+  
           return result.records[0].get("cex").properties;
-        } catch (error) {
-          console.error(
-            "Error mapping transaction to CentralizedExchange:",
-            error.message
-          );
-          throw error;
         } finally {
           await session.close();
         }
       },
     },
   };
+  
 
   let neoSchema;
   try {

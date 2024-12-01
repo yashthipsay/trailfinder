@@ -203,7 +203,7 @@ class mapBtcFlow extends TransactionDatasetGenerator {
           await this.getEntityType(vin.prevout.scriptpubkey_address);
           await session.run(
             `
-            MERGE (a:Address {address: $address})
+            MERGE (a:Vin {address: $address})
             MERGE (t:Transaction {hash: $txid})
             MERGE (a)-[:FUNDS {value: $value}]->(t)
             `,
@@ -218,11 +218,12 @@ class mapBtcFlow extends TransactionDatasetGenerator {
 
       // Add the vout (output) relationships
       for (const vout of transaction.vout) {
+        console.log("txids", transaction.txid);
         if (vout.scriptpubkey_address) {
           await session.run(
             `
             MERGE (t:Transaction {hash: $txid})
-            MERGE (a:Address {address: $address})
+            MERGE (a:Vout {address: $address})
             MERGE (t)-[:OUTPUT {value: $value}]->(a)
             `,
             {

@@ -164,6 +164,9 @@ class mapBtcFlow extends TransactionDatasetGenerator {
             MERGE (t)-[:INVOLVES]->(cex)
             MERGE (vin:Vin {address: $vinAddress})
             MERGE (vin)-[:SENT_TO]->(t)
+            WITH t, cex
+            OPTIONAL MATCH (t)-[r:OUTPUT]->(a:Vout {address: $cexAddress})
+            DELETE r, a
               `,
               {
                 txid: transfer.txid,
@@ -172,9 +175,11 @@ class mapBtcFlow extends TransactionDatasetGenerator {
                 blockHash: transfer.blockHash,
                 blockHeight: transfer.blockHeight,
                 name: cexEntity.name,
-                vinAddress: vinAddress
+                vinAddress: vinAddress,
+                cexAddress: transfer.toAddress.address,
               }
             );
+
             console.log(`Mapped transfer ${transfer.blockHash} to Neo4j`);
           } finally {
             await session.close();

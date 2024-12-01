@@ -186,17 +186,23 @@ class mapBtcFlow extends TransactionDatasetGenerator {
     const session = this.driver.session();
     
     try {
+
+      // Calculate metrics
+      const metrics = this.calculateMetrics(transaction);
+
       // Add the transaction node
       await session.run(
         `
         MERGE (t:Transaction {hash: $txid})
-        ON CREATE SET t.fee = $fee, t.confirmed = $confirmed
+        ON CREATE SET t.fee = $fee, t.confirmed = $confirmed, t.totalVinValue = $totalVinValue, t.totalVoutValue = $totalVoutValue
         RETURN t
         `,
         {
           txid: transaction.txid,
           fee: transaction.fee,
           confirmed: transaction.status.confirmed,
+          totalVinValue: metrics.in_btc,
+          totalVoutValue: metrics.out_btc,
         }
       );
 

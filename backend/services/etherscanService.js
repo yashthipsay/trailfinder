@@ -7,10 +7,12 @@ dotenv.config({
     encoding: 'utf8',
 })
 import getEventsByTransactionHash from "./eventManager.js";
+import axios from "axios";
 
 const etherscanProvider = new EtherscanProvider("homestead", `${process.env.ETHERSCAN_API_KEY}`);
 const recursionLimit = 2;
 let driver = getDriver();
+const CEX_API_URL = `https://api.arkhamintelligence.com/transfers`;
 
 const WORMHOLE_CCTP_ADDRESS = "0xAaDA05BD399372f0b0463744C09113c137636f6a".toLowerCase();
 const WORMHOLE_API_URL = "https://api.wormholescan.io/api/v1/transactions/";
@@ -39,7 +41,7 @@ export const traceFundFlow = async (
 
         const history = await etherscanProvider.getHistory(walletAddress);
 
-        const MAX_ITERATIONS = 100;  // Set the desired iteration limit
+        const MAX_ITERATIONS = 10;  // Set the desired iteration limit
         let iterationCount = 0;    // Initialize a counter for iterations
 
         for (let tx of history) {
@@ -54,6 +56,19 @@ export const traceFundFlow = async (
             const value = tx.value.toString();
             const hash = tx.hash;
             const events = await getEventsByTransactionHash(hash) || [];
+
+            // Fetch Arkham entity type for sender and recipient
+            const senderEntityType = await getEntityType(sender);
+            const recipientEntityType = await getEntityType(recipient);
+
+            if (recipientEntityType === "cex") {
+                console.log(`Detected CEX transaction: ${hash}`);
+                const transfers = await getArkhamTransfers(sender, recipient);
+                for (const transfer of transfers) {
+                    await mapCexTransferToNeo4j(session, transfer);
+                }
+                continue;
+            }
             
             // Check if the recipient is the Wormhole CCTP address
             if (recipient === WORMHOLE_CCTP_ADDRESS || recipient === WORMHOLE_TOKENBRIDGE_PORTAL) {
@@ -92,6 +107,100 @@ export const traceFundFlow = async (
     }
 }
 
+const mapCexTransferToNeo4j = async (session, transfer) => {
+    const cexEntity = transfer.toAddress?.arkhamEntity;
+    if (!cexEntity) {
+        console.error("No CEX entity details found in transfer.");
+        return;
+    }
+
+    try {
+        // Add or update CEX entity
+        await session.run(
+            `
+            MERGE (cex:CentralizedExchange {id: $id})
+            SET cex.name = $name, 
+                cex.website = $website, 
+                cex.twitter = $twitter, 
+                cex.crunchbase = $crunchbase, 
+                cex.linkedin = $linkedin
+            RETURN cex
+            `,
+            {
+                id: cexEntity.id,
+                name: cexEntity.name || "Unknown",
+                website: cexEntity.website || "Unknown",
+                twitter: cexEntity.twitter || "Unknown",
+                crunchbase: cexEntity.crunchbase || "Unknown",
+                linkedin: cexEntity.linkedin || "Unknown",
+            }
+        );
+
+        // Add or update transaction and link to CEX
+        await session.run(
+            `
+            MERGE (fromWallet:Wallet {address: $fromAddress, chainId: 'ethereum'})
+            MERGE (toWallet:Wallet {address: $toAddress, chainId: 'ethereum'})
+            MERGE (t:Transaction {id: $transactionHash})
+            ON CREATE SET t.amount = $amount,
+                          t.timestamp = datetime($timestamp),
+                          t.tokenName = $tokenName,
+                          t.tokenSymbol = $tokenSymbol,
+                          t.chainId = 'ethereum'
+            MERGE (fromWallet)-[:SENT_FROM]->(t)-[:SENT_TO]->(toWallet)
+            MERGE (t)-[:INVOLVES]->(cex)
+            `,
+            {
+                transactionHash: transfer.transactionHash,
+                fromAddress: transfer.fromAddress?.address || "Unknown",
+                toAddress: transfer.toAddress?.address || "Unknown",
+                amount: transfer.unitValue || 0,
+                timestamp: transfer.blockTimestamp || new Date().toISOString(),
+                tokenName: transfer.tokenName || "Unknown",
+                tokenSymbol: transfer.tokenSymbol || "Unknown",
+            }
+        );
+
+        console.log(`Mapped transfer ${transfer.transactionHash} to CEX ${cexEntity.name}`);
+    } catch (error) {
+        console.error("Error mapping CEX transfer to Neo4j:", error.message);
+    }
+};
+
+const getArkhamTransfers = async (fromAddress, toAddress) => {
+    const apiKey = process.env.ARKHAM_API_KEY;
+    try {
+        const response = await axios.get(CEX_API_URL, {
+            headers: { 'API-Key': apiKey },
+            params: {
+                base: "all",
+                usdGte: 1000000,
+                from: fromAddress,
+                to: `all,type:cex,deposit:all`,
+                chains: "ethereum",
+            },
+        });
+        return response.data.transfers || [];
+    } catch (error) {
+        console.error("Error fetching Arkham transfers:", error.message);
+        return [];
+    }
+};
+
+const getEntityType = async (address) => {
+    const apiKey = process.env.ARKHAM_API_KEY;
+    try {
+        const response = await axios.get(`https://api.arkhamintelligence.com/intelligence/address/${address}`, {
+            headers: { 'API-Key': apiKey },
+            params: { chain: 'ethereum' },
+        });
+        console.log(`Fetched entity type for address ${address}:`, response.data?.arkhamEntity?.type);
+        return response.data?.arkhamEntity?.type || "unknown";
+    } catch (error) {
+        console.error(`Error fetching entity type for address ${address}:`, error.message);
+        return "unknown";
+    }
+};
 
 const fetchWormholeTransaction = async (address) => {
     try {

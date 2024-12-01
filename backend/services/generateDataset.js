@@ -83,7 +83,7 @@ class TransactionDatasetGenerator {
         let transactions = [];
         let lastSeenTxid = null;
 
-        while(transactions.length < 1000) {
+        while(transactions.length < 10) {
 
             try {
                 const url = `${BTCSCAN_BASE_URL}/address/${address}/txs/chain${

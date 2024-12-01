@@ -17,11 +17,24 @@ type Transaction {
   amount: Float!
   timestamp: DateTime!
   chainId: String!
+  tokenName: String
+  tokenSymbol: String
   from: Wallet! @relationship(type: "SENT_FROM", direction: OUT)
   to: Wallet! @relationship(type: "SENT_TO", direction: IN)
+  involves: [CentralizedExchange!]! @relationship(type: "INVOLVES", direction: OUT)
   suspiciousPatterns: [Pattern!]! @relationship(type: "PART_OF_PATTERN", direction: OUT)
   events: [Event!]! @relationship(type: "TRIGGERED_IN", direction: OUT)
   bridgedTo: Wallet @relationship(type: "BRIDGED_TO", direction: OUT)
+}
+
+type CentralizedExchange {
+  id: ID! @id
+  name: String!
+  website: String
+  twitter: String
+  crunchbase: String
+  linkedin: String
+  transactions: [Transaction!]! @relationship(type: "INVOLVES", direction: IN)
 }
 
 type Pattern {
@@ -73,6 +86,15 @@ input EventInput {
   details: String
   chainId: String!
 }
+
+addCentralizedExchange(
+    id: String!,
+    name: String!,
+    website: String,
+    twitter: String,
+    crunchbase: String,
+    linkedin: String
+  ): CentralizedExchange!
 `;
 
 

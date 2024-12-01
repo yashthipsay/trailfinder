@@ -170,7 +170,7 @@ class mapBtcFlow extends TransactionDatasetGenerator {
                 name: cexEntity.name,
               }
             );
-            console.log(`Mapped transfer ${transfer.txid} to Neo4j`);
+            console.log(`Mapped transfer ${transfer} to Neo4j`);
           } finally {
             await session.close();
           }

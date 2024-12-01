@@ -80,7 +80,7 @@ class mapBtcFlow extends TransactionDatasetGenerator {
             );
 
             for(const transfer of transfers.transfers || []) {
-              await this.mapCexTransferToNeo4j(transfer);
+              await this.mapCexTransferToNeo4j(transfer, vin.prevout.scriptpubkey_address);
             }
           } else {
             await this.mapFundFlow(
@@ -110,7 +110,7 @@ class mapBtcFlow extends TransactionDatasetGenerator {
       
             // Map transfers to Neo4j
             for (const transfer of transfers.transfers || []) {
-              await this.mapCexTransferToNeo4j(transfer);
+              await this.mapCexTransferToNeo4j(transfer, vout.scriptpubkey_address);
             }
           } else {
             // Continue recursive mapping if not a cex
@@ -127,7 +127,7 @@ class mapBtcFlow extends TransactionDatasetGenerator {
     }
     }
 
-    async mapCexTransferToNeo4j(transfer) {
+    async mapCexTransferToNeo4j(transfer, vinAddress) {
         const session = this.driver.session();
 
           try{
@@ -158,10 +158,12 @@ class mapBtcFlow extends TransactionDatasetGenerator {
             await session.run(
               `
               MERGE (t:Transaction {hash: $txid})
-              ON CREATE SET t.blockTimestamp = $blockTimestamp, t.unitValue = $unitValue, t.blockHash = $blockHash, t.blockHeight = $blockHeight
-              WITH t
-              MATCH (cex:CentralizedExchange {name: $name})
-              MERGE (t)-[:INVOLVES]->(cex)
+            ON CREATE SET t.blockTimestamp = $blockTimestamp, t.unitValue = $unitValue, t.blockHash = $blockHash, t.blockHeight = $blockHeight
+            WITH t
+            MATCH (cex:CentralizedExchange {name: $name})
+            MERGE (t)-[:INVOLVES]->(cex)
+            MERGE (vin:Vin {address: $vinAddress})
+            MERGE (vin)-[:SENT_TO]->(t)
               `,
               {
                 txid: transfer.txid,
@@ -169,7 +171,8 @@ class mapBtcFlow extends TransactionDatasetGenerator {
                 unitValue: transfer.unitValue,
                 blockHash: transfer.blockHash,
                 blockHeight: transfer.blockHeight,
-                name: cexEntity.name
+                name: cexEntity.name,
+                vinAddress: vinAddress
               }
             );
             console.log(`Mapped transfer ${transfer.blockHash} to Neo4j`);

@@ -24,6 +24,7 @@ type Transaction {
   involves: [CentralizedExchange!]! @relationship(type: "INVOLVES", direction: OUT)
   suspiciousPatterns: [Pattern!]! @relationship(type: "PART_OF_PATTERN", direction: OUT)
   events: [Event!]! @relationship(type: "TRIGGERED_IN", direction: OUT)
+  bridgedTo: Wallet @relationship(type: "BRIDGED_TO", direction: OUT)
 }
 
 type WormholeTransaction {

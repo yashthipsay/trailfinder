@@ -27,7 +27,7 @@ callDatabase();
 // 0x307834c338866516DB9f5784aBc4C43484a8363a
 // 0xEae7380dD4CeF6fbD1144F49E4D1e6964258A4F4
 // getEventsByTransactionHash("0x1f87af615627d6d640e41bfb09438b9faa2ae92bf53b6565de41441e39a5325e")
-traceFundFlow("0x307834c338866516DB9f5784aBc4C43484a8363a", new Set(), 1).then(() => {
+traceFundFlow("0xcA74F404E0C7bfA35B13B511097df966D5a65597", new Set(), 1).then(() => {
     console.log('Fund flow tracing completed.');
 })
 

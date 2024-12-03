@@ -139,16 +139,18 @@ const mapCexTransferToNeo4j = async (session, transfer) => {
         // Add or update transaction and link to CEX
         await session.run(
             `
-            MERGE (fromWallet:Wallet {address: $fromAddress, chainId: 'ethereum'})
-            MERGE (toWallet:Wallet {address: $toAddress, chainId: 'ethereum'})
-            MERGE (t:Transaction {id: $transactionHash})
-            ON CREATE SET t.amount = $amount,
-                          t.timestamp = datetime($timestamp),
-                          t.tokenName = $tokenName,
-                          t.tokenSymbol = $tokenSymbol,
-                          t.chainId = 'ethereum'
-            MERGE (fromWallet)-[:SENT_FROM]->(t)-[:SENT_TO]->(toWallet)
-            MERGE (t)-[:INVOLVES]->(cex)
+                MERGE (fromWallet:Wallet {address: $fromAddress, chainId: 'ethereum'})
+    MERGE (toWallet:Wallet {address: $toAddress, chainId: 'ethereum'})
+    MERGE (t:Transaction {id: $transactionHash})
+    ON CREATE SET t.amount = $amount,
+                  t.timestamp = datetime($timestamp),
+                  t.tokenName = $tokenName,
+                  t.tokenSymbol = $tokenSymbol,
+                  t.chainId = 'ethereum'
+    MERGE (fromWallet)-[:SENT_FROM]->(t)-[:SENT_TO]->(toWallet)
+    WITH t
+    MATCH (cex:CentralizedExchange {id: $id})
+    MERGE (t)-[:INVOLVES]->(cex)
             `,
             {
                 transactionHash: transfer.transactionHash,
@@ -158,6 +160,7 @@ const mapCexTransferToNeo4j = async (session, transfer) => {
                 timestamp: transfer.blockTimestamp || new Date().toISOString(),
                 tokenName: transfer.tokenName || "Unknown",
                 tokenSymbol: transfer.tokenSymbol || "Unknown",
+                id: cexEntity.id,
             }
         );
 
@@ -180,9 +183,15 @@ const getArkhamTransfers = async (fromAddress, toAddress) => {
                 chains: "ethereum",
             },
         });
+        console.log(`Fetched Arkham transfers between ${fromAddress} and ${toAddress}:`, response.data.transfers);
         return response.data.transfers || [];
     } catch (error) {
-        console.error("Error fetching Arkham transfers:", error.message);
+        console.error(`Error fetching Arkham transfers between ${fromAddress} and ${toAddress}:`, error.message);
+        if (error.response) {
+            console.error("Response data:", error.response.data);
+            console.error("Response status:", error.response.status);
+            console.error("Response headers:", error.response.headers);
+        }
         return [];
     }
 };
@@ -235,7 +244,7 @@ const addWormholeTransaction = async (session, tx, wormholeData, events) => {
             
             MERGE (w:WormholeTransaction {id: $wormholeId})
             SET w += $wormholeData
-            MERGE (t)-[:TRIGGERED]->(w)
+            MERGE (t)-[:BRIDGED_TO]->(w)
             
             MERGE (e:Event {id: randomUUID()})
             SET e.log = $events

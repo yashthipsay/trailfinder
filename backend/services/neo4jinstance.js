@@ -24,7 +24,15 @@ type Transaction {
   involves: [CentralizedExchange!]! @relationship(type: "INVOLVES", direction: OUT)
   suspiciousPatterns: [Pattern!]! @relationship(type: "PART_OF_PATTERN", direction: OUT)
   events: [Event!]! @relationship(type: "TRIGGERED_IN", direction: OUT)
-  bridgedTo: Wallet @relationship(type: "BRIDGED_TO", direction: OUT)
+}
+
+type WormholeTransaction {
+  id: ID! @id
+  emitterChain: String!
+  emitterAddress: String!
+  emitterNativeAddress: String!
+  tokenAmount: Float!
+  transaction: Transaction! @relationship(type: "BRIDGED_TO", direction: IN)
 }
 
 type CentralizedExchange {
@@ -78,6 +86,15 @@ type Mutation {
     chainId: String!,
     events: [EventInput!]!
   ): Transaction!
+
+  addCentralizedExchange(
+    id: String!,
+    name: String!,
+    website: String,
+    twitter: String,
+    crunchbase: String,
+    linkedin: String
+  ): CentralizedExchange!
 }
 
 input EventInput {
@@ -87,14 +104,7 @@ input EventInput {
   chainId: String!
 }
 
-addCentralizedExchange(
-    id: String!,
-    name: String!,
-    website: String,
-    twitter: String,
-    crunchbase: String,
-    linkedin: String
-  ): CentralizedExchange!
+
 `;
 
 
@@ -194,7 +204,33 @@ const resolvers = {
         await session.close(); // Close session after mutation
       }
     }
-  }
+  },
+  WormholeTransaction: {
+    transaction: async (parent) => {
+      const session = driver.session();
+      try {
+        const result = await session.run(
+          `
+          MATCH (t:Transaction)-[:BRIDGED_TO]->(w:WormholeTransaction {id: $id})
+          RETURN t
+          `,
+          { id: parent.id }
+        );
+
+        const transaction = result.records[0]?.get("t").properties;
+
+        if (!transaction) {
+          throw new Error("Transaction not found for Wormhole.");
+        }
+        return transaction;
+      } catch (error) {
+        console.error("Error fetching Wormhole transaction:", error);
+        throw new Error("Failed to fetch Wormhole transaction.");
+      } finally {
+        await session.close();
+      }
+    },
+  },
 };
 
 

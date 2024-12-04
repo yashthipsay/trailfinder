@@ -42,10 +42,11 @@ export const traceFundFlow = async (
 
         const history = await etherscanProvider.getHistory(walletAddress);
 
-        const MAX_ITERATIONS = 10;  // Set the desired iteration limit
+        const MAX_ITERATIONS = 100;  // Set the desired iteration limit
         let iterationCount = 0;    // Initialize a counter for iterations
 
         for (let tx of history) {
+            console.log(`Processing transaction: ${tx.value}`);
             if (iterationCount >= MAX_ITERATIONS) {
                 console.log(`Reached maximum iteration count of ${MAX_ITERATIONS}. Stopping loop.`);
                 break;  // Exit the loop once the maximum number of iterations is reached
@@ -54,7 +55,7 @@ export const traceFundFlow = async (
             iterationCount++;  // Increment the iteration counter
             const sender = tx.from.toLowerCase();
             const recipient = tx.to.toLowerCase();
-            const value = tx.value.toString();
+            const value = tx.value;
             const hash = tx.hash;
             const events = await getEventsByTransactionHash(hash) || [];
 
@@ -232,6 +233,7 @@ const fetchWormholeTransaction = async (address) => {
 
 const addWormholeTransaction = async (session, tx, wormholeData, events) => {
     console.log("Wormhole data:", wormholeData);
+    const { tokenName, tokenSymbol } = await addTokenDetails(tx.hash);
     try {
         const flattenedWormholeData = {
             emitterChain: wormholeData.emitterChain,
@@ -242,7 +244,7 @@ const addWormholeTransaction = async (session, tx, wormholeData, events) => {
         const result = await session.run(
             `
             MERGE (t:Transaction {hash: $hash})
-            SET t.value = $value, t.timestamp = $timestamp, t.from = $from, t.to = $to 
+            SET t.amount = $amount, t.value = $value, t.timestamp = $timestamp, t.from = $from, t.to = $to, t.tokenName = $tokenName, t.tokenSymbol = $tokenSymbol 
             MERGE (a1:Wallet {address: $from})
             MERGE (a2:Wallet {address: $to})
             MERGE (a1)-[:SENT_FROM]->(t)-[:SENT_TO]->(a2)
@@ -258,14 +260,17 @@ const addWormholeTransaction = async (session, tx, wormholeData, events) => {
             RETURN t, w, e
             `,
             {
-                hash: tx.hash,
-                from: tx.from,
-                to: tx.to,
-                value: tx.value.toString(),
-                timestamp: tx.timestamp,
-                events: events,
-                wormholeId: wormholeData.id.toString(),
-                wormholeData: flattenedWormholeData,
+                hash: tx.hash || "Unknown",
+                from: tx.from || "Unknown",
+                to: tx.to || "Unknown",
+                amount: tx.value.toString() || 0,
+                value: tx.value.toString() || "Unknown",
+                timestamp: tx.timestamp || new Date().toISOString(),
+                tokenName: tokenName || "Unknown",
+                tokenSymbol: tokenSymbol || "Unknown",
+                events: events || [],
+                wormholeId: wormholeData.id.toString() || "Unknown",
+                wormholeData: flattenedWormholeData || {},
             }
         );
         console.log("Wormhole transaction added:", result.records[0]);
@@ -280,27 +285,34 @@ const addWormholeTransaction = async (session, tx, wormholeData, events) => {
 
 const addBridgeTransaction = async (session, tx, events) => {
     try {
+        const { tokenName, tokenSymbol } = await addTokenDetails(tx.hash);
+        const eventDetails = `Tokens Deposited From 4${tx.from} to ${tx.to}`;
+        console.log("Event details:", eventDetails);
         const result = await session.run(
             `
             MERGE (t:Transaction {hash: $hash})
-            SET t.value = $value, t.timestamp = $timestamp, t.from = $from, t.to = $to 
+            SET t.value = $value, t.timestamp = $timestamp, t.from = $from, t.to = $to, t.tokenName = $tokenName, t.tokenSymbol = $tokenSymbol
             MERGE (a1:Wallet {address: $from})
             MERGE (a2:Wallet {address: $to})
             MERGE (a1)-[:SENT_FROM]->(t)-[:SENT_TO]->(a2)
             
             MERGE (e:Event {id: randomUUID()})
-            SET e.log = $events
+            SET e.name = $eventName, e.details = $eventDetails, e.chainId = $chainId
             MERGE (t)-[:TRIGGERED_IN]->(e)
             
             RETURN t, e
             `,
             {
-                hash: tx.hash,
-                from: tx.from,
-                to: tx.to,
-                value: tx.value.toString(),
-                timestamp: tx.timestamp,
-                events: [] ? "Tokens Deposited" : events
+                hash: tx.hash || "Unknown",
+                from: tx.from || "Unknown",
+                to: tx.to   || "Unknown",
+                value: tx.value.toString() || "Unknown",
+                timestamp: tx.timestamp  || new Date().toISOString(),
+                tokenName: tokenName || "Unknown",
+                tokenSymbol: tokenSymbol || "Unknown",
+                eventName: "Tokens Deposited",
+                eventDetails: eventDetails,
+                chainId: "1"
             }
         );
         console.log("BRIDGE transaction added:", result.records[0]);
@@ -310,24 +322,40 @@ const addBridgeTransaction = async (session, tx, events) => {
     }
 }
 
+const addTokenDetails = async (txHash) => {
+    const apiKey = process.env.ARKHAM_API_KEY;
+    try {
+        const response = await axios.get(`https://api.arkhamintelligence.com/tx/${txHash}`, {
+            headers: { 'API-Key': apiKey }
+        });
+        const { tokenID: tokenName, tokenSymbol} = response.data.ethereum;
+        return { tokenName, tokenSymbol };
+    } catch (error) {
+        console.error(`Error fetching token details for transaction ${txHash}:`, error.message);
+        return { tokenName: "Unknown", tokenSymbol: "Unknown" };
+    }
+}
+
 const addTransaction = async (session, tx) => {
+    const { tokenName, tokenSymbol } = await addTokenDetails(tx.hash);
     try {
         const result = await session.run(
             `
             MERGE (t:Transaction {hash: $hash})
-            SET t.value = $value, t.timestamp = $timestamp, t.from = $from, t.to = $to 
+            SET t.value = $value, t.timestamp = $timestamp, t.from = $from, t.to = $to, t.tokenName = $tokenName, t.tokenSymbol = $tokenSymbol
             MERGE (a1:Wallet {address: $from})
             MERGE (a2:Wallet {address: $to})
             MERGE (a1)-[:SENT_FROM]->(t)-[:SENT_TO]->(a2)
-            
             RETURN t
             `,
             {
-                hash: tx.hash,
-                from: tx.from,
-                to: tx.to,
-                value: tx.value.toString(),
-                timestamp: tx.timestamp
+                hash: tx.hash || "Unknown",
+                from: tx.from || "Unknown",
+                to: tx.to || "Unknown",
+                value: tx.value.toString() || "Unknown",
+                timestamp: tx.timestamp || new Date().toISOString(),
+                tokenName: tokenName || "Unknown",
+                tokenSymbol: tokenSymbol || "Unknown"
             }
         );
         console.log("Transaction added:", result.records[0]);

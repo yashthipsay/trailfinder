@@ -7,16 +7,16 @@ import neo4j from "neo4j-driver";
 
 const typeDefs = `#graphql
 type Wallet {
-  address: ID! @id
-  chainId: String!
+  address: String
+  chainId: String
   transactions: [Transaction!]! @relationship(type: "SENT_FROM", direction: OUT)
 }
 
 type Transaction {
-  id: ID! @id
-  amount: Float!
-  timestamp: DateTime!
-  chainId: String!
+  id: String
+  amount: Float
+  timestamp: DateTime
+  chainId: String
   tokenName: String
   tokenSymbol: String
   from: Wallet! @relationship(type: "SENT_FROM", direction: OUT)
@@ -28,7 +28,7 @@ type Transaction {
 }
 
 type WormholeTransaction {
-  id: ID! @id
+  id: String
   emitterChain: String!
   emitterAddress: String!
   emitterNativeAddress: String!
@@ -37,7 +37,7 @@ type WormholeTransaction {
 }
 
 type CentralizedExchange {
-  id: ID! @id
+  id: String
   name: String!
   website: String
   twitter: String
@@ -53,11 +53,11 @@ type Pattern {
 }
 
 type Event {
-  id: ID! @id
-  name: String!
+  id: String
+  name: String
   details: String
-  chainId: String!
-  transaction: Transaction! @relationship(type: "TRIGGERED_IN", direction: IN)
+  chainId: String
+  transaction: Transaction @relationship(type: "TRIGGERED_IN", direction: IN)
 }
 
 type Query {
@@ -81,11 +81,11 @@ input DateRange {
 type Mutation {
   addWallet(address: String!, chainId: String!): Wallet!
   addTransaction(
-    fromWallet: ID!, 
-    toWallet: ID!, 
-    amount: Float!, 
-    timestamp: DateTime!, 
-    chainId: String!,
+    fromWallet: String, 
+    toWallet: String, 
+    amount: Float, 
+    timestamp: DateTime, 
+    chainId: String,
     events: [EventInput!]!
   ): Transaction!
 
@@ -143,13 +143,18 @@ const resolvers = {
       try {
         const result = await session.run(`
           MATCH (t:Transaction)
-          RETURN t
+          OPTIONAL MATCH (t)-[:TRIGGERED_IN]->(e:Event)
+          RETURN t, collect(e) AS events
         `);
 
-        const transactions = result.records.map(record => record.get('t').properties);
-
-        // Return an array, even if it's empty
-        return transactions.length ? transactions : [];
+        return result.records.map(record => {
+          const transaction = record.get('t').properties;
+          const events = record.get('events').map(event => event.properties);
+          return {
+            ...transaction,
+            events: events.length ? events : [] // Return an array, even if it's empty
+          };
+        });
       } catch (error) {
         console.error('Error fetching transactions:', error);
         throw new Error('Failed to fetch transactions');
@@ -160,7 +165,7 @@ const resolvers = {
     anomalousTransactions: async() => {
       const session = driver.session();
       try {
-        await session.run(`
+        let result = await session.run(`
             MATCH (t:Transaction)
             WHERE t.anomalyScore = 1
             RETURN t

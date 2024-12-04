@@ -63,6 +63,7 @@ type Event {
 type Query {
   wallets: [Wallet!]!
   transactions(filter: TransactionFilter): [Transaction!]!
+  anomalousTransactions: [Transaction!]!
 }
 
 input TransactionFilter {
@@ -155,7 +156,25 @@ const resolvers = {
       } finally {
         await session.close();  // Close session after query
       }
-    }
+    },
+    anomalousTransactions: async() => {
+      const session = driver.session();
+      try {
+        await session.run(`
+            MATCH (t:Transaction)
+            WHERE t.anomalyScore = 1
+            RETURN t
+          `);
+
+          const transactions = result.records.map(record => record.get('t'.properties));
+          return transactions.length ? transactions : [];
+      }catch (error) {
+        console.error('Error fetching anomalous transactions:', error);
+        throw new Error('Failed to fetch anomalous transactions');
+      } finally {
+        await session.close();
+      }
+    } 
   },
   Mutation: {
     addWallet: async (_, { address, chainId }) => {

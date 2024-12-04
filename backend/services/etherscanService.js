@@ -8,6 +8,7 @@ dotenv.config({
 })
 import getEventsByTransactionHash from "./eventManager.js";
 import axios from "axios";
+import { session } from "neo4j-driver";
 
 const etherscanProvider = new EtherscanProvider("homestead", `${process.env.ETHERSCAN_API_KEY}`);
 const recursionLimit = 2;
@@ -91,13 +92,17 @@ export const traceFundFlow = async (
                 console.log(`Recursing into sender: ${sender}`);
                 visitedAddresses.add(sender);
                 await traceFundFlow(sender, visitedAddresses, depth + 1);
+
             }
 
             if (!visitedAddresses.has(recipient)) {
                 console.log(`Recursing into recipient: ${recipient}`);
                 visitedAddresses.add(recipient);
                 await traceFundFlow(recipient, visitedAddresses, depth + 1);
+
             }
+
+            await calculateAnomalyScore(session);
         }
     } catch (error) {
         console.error(`Error fetching transaction history for ${walletAddress}:`, error);
@@ -331,3 +336,33 @@ const addTransaction = async (session, tx) => {
         console.error("Error adding transaction:", error);
     }
 };
+
+const calculateAnomalyScore = async (session) => {
+    try{
+        const result = await session.run(
+            `
+            MATCH (t:Transaction)
+            RETURN avg(toFloat(t.value)) AS averageValue
+            `
+        );
+        const averageValue = result.records[0].get('averageValue');
+        console.log("\nAverage value:", typeof averageValue, averageValue);
+
+        const highThreshold = averageValue * 2;
+        const lowThreshold = averageValue * 0.5;
+
+        // Update transaction with anomaly score
+        await session.run(
+            `
+            MATCH (t:Transaction)
+            SET t.anomalyScore = CASE
+                WHEN t.value > $highThreshold OR t.value < $lowThreshold THEN 1
+                ELSE 0
+            END
+            `, { highThreshold, lowThreshold });
+            console.log('Anomaly scores updated successfully.');
+        
+    } catch (error) {
+        console.error('Error calculating anomaly scores:', error);
+    } 
+}

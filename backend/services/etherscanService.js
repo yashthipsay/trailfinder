@@ -291,7 +291,7 @@ const addBridgeTransaction = async (session, tx, events) => {
         const result = await session.run(
             `
             MERGE (t:Transaction {hash: $hash})
-            SET t.value = $value, t.timestamp = $timestamp, t.from = $from, t.to = $to, t.tokenName = $tokenName, t.tokenSymbol = $tokenSymbol
+            SET t.amount = $amount,t.value = $value, t.timestamp = $timestamp, t.from = $from, t.to = $to, t.tokenName = $tokenName, t.tokenSymbol = $tokenSymbol
             MERGE (a1:Wallet {address: $from})
             MERGE (a2:Wallet {address: $to})
             MERGE (a1)-[:SENT_FROM]->(t)-[:SENT_TO]->(a2)
@@ -307,6 +307,7 @@ const addBridgeTransaction = async (session, tx, events) => {
                 from: tx.from || "Unknown",
                 to: tx.to   || "Unknown",
                 value: tx.value.toString() || "Unknown",
+                amount: tx.value.toString() || 0,
                 timestamp: tx.timestamp  || new Date().toISOString(),
                 tokenName: tokenName || "Unknown",
                 tokenSymbol: tokenSymbol || "Unknown",
@@ -342,7 +343,7 @@ const addTransaction = async (session, tx) => {
         const result = await session.run(
             `
             MERGE (t:Transaction {hash: $hash})
-            SET t.value = $value, t.timestamp = $timestamp, t.from = $from, t.to = $to, t.tokenName = $tokenName, t.tokenSymbol = $tokenSymbol
+            SET t.amount = $amount,t.value = $value, t.timestamp = $timestamp, t.from = $from, t.to = $to, t.tokenName = $tokenName, t.tokenSymbol = $tokenSymbol
             MERGE (a1:Wallet {address: $from})
             MERGE (a2:Wallet {address: $to})
             MERGE (a1)-[:SENT_FROM]->(t)-[:SENT_TO]->(a2)
@@ -352,6 +353,7 @@ const addTransaction = async (session, tx) => {
                 hash: tx.hash || "Unknown",
                 from: tx.from || "Unknown",
                 to: tx.to || "Unknown",
+                amount: tx.value.toString() || 0,
                 value: tx.value.toString() || "Unknown",
                 timestamp: tx.timestamp || new Date().toISOString(),
                 tokenName: tokenName || "Unknown",

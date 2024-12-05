@@ -124,7 +124,35 @@ class mapBtcFlow extends TransactionDatasetGenerator {
           }
         }
       }
+
+      // Create SAME_AS relationships between Vout and Vin addresses
+      for (const vin of txDetails.vin) {
+        if (vin.prevout?.scriptpubkey_address) {
+          for (const vout of txDetails.vout) {
+            if(vout.scriptpubkey_address) {
+              await this.createSameAsRelationship(vout.scriptpubkey_address);
+            }
+          }
+        }
+      }
     }
+    }
+
+    async createSameAsRelationship(address) {
+      const session = this.driver.session();
+      try{
+        await session.run(
+          `
+          MATCH (vout:Vout {address: $address})
+          MATCH (vin:Vin {address: $address})
+          MERGE (vout)-[:SAME_AS]->(vin)
+          `,
+          { address }
+      );
+      console.log(`Created SAME_AS relationship for address ${address}`);
+      } catch (error) {
+        console.error(`Error creating SAME_AS relationship for address ${address}:`, error);
+      }
     }
 
     async mapCexTransferToNeo4j(transfer, vinAddress) {

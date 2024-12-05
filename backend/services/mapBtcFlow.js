@@ -90,6 +90,7 @@ class mapBtcFlow extends TransactionDatasetGenerator {
               depth + 1,
               maxDepth
             );
+            await this.createSameAsRelationship(vin.prevout.scriptpubkey_address);
             
           }
           
@@ -100,7 +101,7 @@ class mapBtcFlow extends TransactionDatasetGenerator {
         if (vout.scriptpubkey_address) {
           // Check if the entity type of the address is cex
           const entityType = await this.getEntityType(vout.scriptpubkey_address, "bitcoin");
-      
+        
           if (entityType === "cex") {
             // vout.scriptpubkey_address is a cex address
             const transfers = await this.getEntityTransfers(
@@ -121,20 +122,13 @@ class mapBtcFlow extends TransactionDatasetGenerator {
               depth + 1,
               maxDepth
             );
+
+            await this.createSameAsRelationship(vout.scriptpubkey_address);
           }
         }
       }
 
-      // Create SAME_AS relationships between Vout and Vin addresses
-      for (const vin of txDetails.vin) {
-        if (vin.prevout?.scriptpubkey_address) {
-          for (const vout of txDetails.vout) {
-            if(vout.scriptpubkey_address) {
-              await this.createSameAsRelationship(vout.scriptpubkey_address);
-            }
-          }
-        }
-      }
+     
     }
     }
 

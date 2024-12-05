@@ -49,7 +49,7 @@ callDatabase();
 // **********BTC FLOW MAPPING**********
 const btcFlowMapper = new mapBtcFlow();
 const startAddress = 'bc1qqsa6ac4aeqf6h0xrfea9dj73khjxe8twu4el53g6ln8es9acmn2qddza00';
-const MAX_DEPTH = 3;
+const MAX_DEPTH = 2;
 
 btcFlowMapper
      .startMapping(startAddress, MAX_DEPTH)

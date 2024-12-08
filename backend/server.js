@@ -65,8 +65,10 @@ callDatabase();
 //     });
 
 const generateMixerDataset = new mapBtcFlow();
-await generateMixerDataset.writePrecursorTransactionsToFile('b533b71fa052e62688427a888969ed17ef8ca541f57a462eed9a01ecfe5bad69', 'mixer-detection.json', 30);
+await generateMixerDataset.writePrecursorTransactionsToFile('0c2cb69195c090e1f4057d93ab368e5fbddc48b80e27dd6bb4c788b27d2aa302', 'tree_back.json', 30);
 // 4eb717c3e79d70dea15c2cb5cf8470f271244bea2dac7f9ec1789ad4feec4054
+
+await generateMixerDataset.writeSuccessorTransactionsToFile('0c2cb69195c090e1f4057d93ab368e5fbddc48b80e27dd6bb4c788b27d2aa302', 'tree_front.json', 30);
 
 app.use(
     cors({

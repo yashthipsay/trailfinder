@@ -349,6 +349,44 @@ class mapBtcFlow extends TransactionDatasetGenerator {
         throw error;
     }
 }
+
+
+async fetchSuccessorTransactions(txid, maxDepth) {
+  const session = this.driver.session();
+  try{ 
+    const result = await session.run(
+      `
+      MATCH (t:Transaction {hash: $txid})
+      CALL apoc.path.subgraphNodes(t, {
+          relationshipFilter: '>OUTPUT|>SAME_AS|>FUNDS|',
+          maxLevel: $maxDepth,
+          bfs: true
+      }) YIELD node
+       WITH node
+       WHERE node: Transaction AND node.hash <> $txid
+       RETURN DISTINCT node AS successor
+      `,
+      { txid, maxDepth }
+    );
+    console.log("result", result.records);
+    return result.records.map(record => record.get('successor').properties);
+  } catch (error) {
+    console.error(`Error fetching successor transactions for ${txid}:`, error.message);
+    throw error;
+  }
+}
+
+async writeSuccessorTransactionsToFile(txid, filePath, maxDepth = 10) {
+  try{
+    const successorTransactions = await this.fetchSuccessorTransactions(txid, maxDepth);
+    const jsonData = JSON.stringify(successorTransactions, null, 2);
+    await fs.writeFile(filePath, jsonData, 'utf-8');
+    console.log(`Successor transactions successfully written to ${filePath}`);
+  } catch (error) {
+    console.error(`Error writing successor transactions to ${filePath}:`, error);
+    throw error;
+  }
+}
 }
 
 export default mapBtcFlow;

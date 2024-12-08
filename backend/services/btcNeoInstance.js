@@ -47,9 +47,9 @@ type Mutation {
 `;
 
 
-const URI = process.env.NEO4J_URI;
-const USER = process.env.NEO4J_USERNAME;
-const PASSWORD = process.env.NEO4J_PASSWORD;
+const URI = "neo4j+s://2a5d4ce2.databases.neo4j.io";
+const USER = "neo4j";
+const PASSWORD = "xmsSwC4kCouphYt-mtAivpVyJzmkZLBQO4MHAjGNfYE";
 
 export const initializeBtcNeo4jServer = async () => {
   const driver = neo4j.driver(URI, neo4j.auth.basic(USER, PASSWORD));

@@ -1,15 +1,16 @@
 import neo4j, { driver } from 'neo4j-driver'
 import dotenv from 'dotenv'
 
-dotenv.config({
-  path: 'Neo4j-1dd9edf7-Created-2024-09-01.txt',
-  debug: true,
-  encoding: 'utf8',
-})
+// dotenv.config({
+//   path: 'Neo4j-1dd9edf7-Created-2024-09-01.txt',
+//   debug: true,
+//   encoding: 'utf8',
+// })
 
-const URI = process.env.NEO4J_URI
-const USER = process.env.NEO4J_USERNAME
-const PASSWORD = process.env.NEO4J_PASSWORD
+
+const URI = "neo4j+s://2a5d4ce2.databases.neo4j.io"
+const USER = "neo4j"
+const PASSWORD = "xmsSwC4kCouphYt-mtAivpVyJzmkZLBQO4MHAjGNfYE"
 export const calldB = (async () => {
    
     let driver

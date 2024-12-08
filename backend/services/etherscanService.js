@@ -11,7 +11,7 @@ import axios from "axios";
 import { session } from "neo4j-driver";
 
 const etherscanProvider = new EtherscanProvider("homestead", `${process.env.ETHERSCAN_API_KEY}`);
-const recursionLimit = 2;
+const recursionLimit = 3;
 let driver = getDriver();
 const CEX_API_URL = `https://api.arkhamintelligence.com/transfers`;
 
@@ -40,8 +40,9 @@ export const traceFundFlow = async (
     try{
         console.log(`Tracing transactions for address: ${walletAddress}, depth: ${depth}`);
 
+      
         const history = await etherscanProvider.getHistory(walletAddress);
-
+        
         const MAX_ITERATIONS = 100;  // Set the desired iteration limit
         let iterationCount = 0;    // Initialize a counter for iterations
 

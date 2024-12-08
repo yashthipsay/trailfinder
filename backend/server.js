@@ -47,21 +47,26 @@ callDatabase();
 
 
 // **********BTC FLOW MAPPING**********
-const btcFlowMapper = new mapBtcFlow();
-const startAddress = 'bc1qqsa6ac4aeqf6h0xrfea9dj73khjxe8twu4el53g6ln8es9acmn2qddza00';
-const MAX_DEPTH = 2;
+// const btcFlowMapper = new mapBtcFlow();
+// const startAddress = 'bc1qv328hla8zswhxghakz80ukdp5haxkxahllhgd2';
+// const MAX_DEPTH = 10;
 
-btcFlowMapper
-     .startMapping(startAddress, MAX_DEPTH)
-     .then(() => {
-      console.log('BTC flow mapping completed.');
-      return btcFlowMapper.driver.close();
-     })
-     .catch((error) => {
-      console.error("Error during tracing:", error);
-      return btcFlowMapper.driver.close();
-    });
+// // bc1qqsa6ac4aeqf6h0xrfea9dj73khjxe8twu4el53g6ln8es9acmn2qddza00
 
+// btcFlowMapper
+//      .startMapping(startAddress, MAX_DEPTH)
+//      .then(() => {
+//       console.log('BTC flow mapping completed.');
+//       return btcFlowMapper.driver.close();
+//      })
+//      .catch((error) => {
+//       console.error("Error during tracing:", error);
+//       return btcFlowMapper.driver.close();
+//     });
+
+const generateMixerDataset = new mapBtcFlow();
+await generateMixerDataset.writePrecursorTransactionsToFile('b533b71fa052e62688427a888969ed17ef8ca541f57a462eed9a01ecfe5bad69', 'mixer-detection.json', 30);
+// 4eb717c3e79d70dea15c2cb5cf8470f271244bea2dac7f9ec1789ad4feec4054
 
 app.use(
     cors({

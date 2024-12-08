@@ -20,17 +20,17 @@ const callDatabase = async () => {
     await calldB;
 }
 
-initializeGraphqlServer();
+// initializeGraphqlServer();
 
-// initializeBtcNeo4jServer();
+initializeBtcNeo4jServer();
 callDatabase();
 // 0x307834c338866516DB9f5784aBc4C43484a8363a
 // 0xEae7380dD4CeF6fbD1144F49E4D1e6964258A4F4
 // 0xf9C0b9E489d8bb53B98bdfDc8B4cf13426a6bBcb
 // getEventsByTransactionHash("0x1f87af615627d6d640e41bfb09438b9faa2ae92bf53b6565de41441e39a5325e")
-traceFundFlow("0xEae7380dD4CeF6fbD1144F49E4D1e6964258A4F4", new Set(), 1).then(() => {
-    console.log('Fund flow tracing completed.');
-})
+// traceFundFlow("0xEae7380dD4CeF6fbD1144F49E4D1e6964258A4F4", new Set(), 1).then(() => {
+//     console.log('Fund flow tracing completed.');
+// })
 
 // **********DATASET GENERATION**********
 
@@ -48,8 +48,10 @@ traceFundFlow("0xEae7380dD4CeF6fbD1144F49E4D1e6964258A4F4", new Set(), 1).then((
 
 // **********BTC FLOW MAPPING**********
 // const btcFlowMapper = new mapBtcFlow();
-// const startAddress = 'bc1qqsa6ac4aeqf6h0xrfea9dj73khjxe8twu4el53g6ln8es9acmn2qddza00';
-// const MAX_DEPTH = 3;
+// const startAddress = 'bc1qv328hla8zswhxghakz80ukdp5haxkxahllhgd2';
+// const MAX_DEPTH = 10;
+
+// // bc1qqsa6ac4aeqf6h0xrfea9dj73khjxe8twu4el53g6ln8es9acmn2qddza00
 
 // btcFlowMapper
 //      .startMapping(startAddress, MAX_DEPTH)
@@ -62,6 +64,11 @@ traceFundFlow("0xEae7380dD4CeF6fbD1144F49E4D1e6964258A4F4", new Set(), 1).then((
 //       return btcFlowMapper.driver.close();
 //     });
 
+const generateMixerDataset = new mapBtcFlow();
+await generateMixerDataset.writePrecursorTransactionsToFile('0c2cb69195c090e1f4057d93ab368e5fbddc48b80e27dd6bb4c788b27d2aa302', 'tree_back.json', 30);
+// 4eb717c3e79d70dea15c2cb5cf8470f271244bea2dac7f9ec1789ad4feec4054
+
+await generateMixerDataset.writeSuccessorTransactionsToFile('0c2cb69195c090e1f4057d93ab368e5fbddc48b80e27dd6bb4c788b27d2aa302', 'tree_front.json', 30);
 
 app.use(
     cors({

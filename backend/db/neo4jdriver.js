@@ -2,7 +2,7 @@ import neo4j, { driver } from 'neo4j-driver'
 import dotenv from 'dotenv'
 
 dotenv.config({
-  path: 'Neo4j-2bdd9fa8-Created-2024-12-02.txt',
+  path: 'Neo4j-1dd9edf7-Created-2024-09-01.txt',
   debug: true,
   encoding: 'utf8',
 })

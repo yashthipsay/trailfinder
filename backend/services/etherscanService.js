@@ -11,7 +11,7 @@ import axios from "axios";
 import { session } from "neo4j-driver";
 
 const etherscanProvider = new EtherscanProvider("homestead", `${process.env.ETHERSCAN_API_KEY}`);
-const recursionLimit = 2;
+const recursionLimit = 3;
 let driver = getDriver();
 const CEX_API_URL = `https://api.arkhamintelligence.com/transfers`;
 
@@ -40,8 +40,9 @@ export const traceFundFlow = async (
     try{
         console.log(`Tracing transactions for address: ${walletAddress}, depth: ${depth}`);
 
+      
         const history = await etherscanProvider.getHistory(walletAddress);
-
+        
         const MAX_ITERATIONS = 100;  // Set the desired iteration limit
         let iterationCount = 0;    // Initialize a counter for iterations
 
@@ -291,7 +292,7 @@ const addBridgeTransaction = async (session, tx, events) => {
         const result = await session.run(
             `
             MERGE (t:Transaction {hash: $hash})
-            SET t.value = $value, t.timestamp = $timestamp, t.from = $from, t.to = $to, t.tokenName = $tokenName, t.tokenSymbol = $tokenSymbol
+            SET t.amount = $amount,t.value = $value, t.timestamp = $timestamp, t.from = $from, t.to = $to, t.tokenName = $tokenName, t.tokenSymbol = $tokenSymbol
             MERGE (a1:Wallet {address: $from})
             MERGE (a2:Wallet {address: $to})
             MERGE (a1)-[:SENT_FROM]->(t)-[:SENT_TO]->(a2)
@@ -307,6 +308,7 @@ const addBridgeTransaction = async (session, tx, events) => {
                 from: tx.from || "Unknown",
                 to: tx.to   || "Unknown",
                 value: tx.value.toString() || "Unknown",
+                amount: tx.value.toString() || 0,
                 timestamp: tx.timestamp  || new Date().toISOString(),
                 tokenName: tokenName || "Unknown",
                 tokenSymbol: tokenSymbol || "Unknown",
@@ -342,7 +344,7 @@ const addTransaction = async (session, tx) => {
         const result = await session.run(
             `
             MERGE (t:Transaction {hash: $hash})
-            SET t.value = $value, t.timestamp = $timestamp, t.from = $from, t.to = $to, t.tokenName = $tokenName, t.tokenSymbol = $tokenSymbol
+            SET t.amount = $amount,t.value = $value, t.timestamp = $timestamp, t.from = $from, t.to = $to, t.tokenName = $tokenName, t.tokenSymbol = $tokenSymbol
             MERGE (a1:Wallet {address: $from})
             MERGE (a2:Wallet {address: $to})
             MERGE (a1)-[:SENT_FROM]->(t)-[:SENT_TO]->(a2)
@@ -352,6 +354,7 @@ const addTransaction = async (session, tx) => {
                 hash: tx.hash || "Unknown",
                 from: tx.from || "Unknown",
                 to: tx.to || "Unknown",
+                amount: tx.value.toString() || 0,
                 value: tx.value.toString() || "Unknown",
                 timestamp: tx.timestamp || new Date().toISOString(),
                 tokenName: tokenName || "Unknown",

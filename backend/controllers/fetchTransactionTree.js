@@ -1,9 +1,66 @@
+import { getDriver } from "../db/neo4jdriver";
+import fs from "fs/promises";
+
+const driver = getDriver();
+
+const fetchTransactionTree = async(txid) => {
+    const session = driver.session();
+    try{
+        // Fetch precursor transactions
+        const precursorResult = await session.run(
+            `
+            MATCH (target:Transaction {txid: $txid})-[:INPUTS*1..30]->(precursor:Transaction)
+            RETURN target.txid AS TargetTx, collect(precursor.txid) AS PrecursorTxs
+            `,
+            { txid }
+        );
+
+        const precursorTxs = precursorResult.records[0]?.get('PrecursorTxs') || [];
+
+         // Fetch successor transactions
+         const successorResult = await session.run(
+             `
+             MATCH (target:Transaction {txid: $txid})<-[:INPUTS*1..10]-(successor:Transaction)
+             RETURN target.txid AS TargetTx, collect(successor.txid) AS SuccessorTxs
+             `,
+             { txid }
+         );
+
+            const successorTxs = successorResult.records[0]?.get('SuccessorTxs') || [];
+
+            return {
+                txid,
+                precursorTxs,
+                successorTxs
+            };
+    } catch (error) {
+        console.error('Error fetching transaction tree:', error);
+        throw error;
+    }
+}
+
+const storeTransactionTreeData = async (data, filePath) => {
+    try{
+        const jsonData = JSON.stringify(data, null, 2);
+        await fs.writeFile(filePath, jsonData, 'utf-8');
+        console.log(`Data successfully written to ${filePath}`);
+    } catch (error) {
+        console.error(`Error writing data to ${filePath}:`, error);
+        throw error;
+    }
+}
+
+
+
+export { fetchTransactionTree, storeTransactionTreeData };
+
+
+/*
 import TransactionDatasetGenerator from "./generateDataset.js";
 import { getDriver } from "../db/neo4jdriver.js";
 import { cexEntities } from "./cexEntities.js";
 import axios from "axios";
-import fs from "fs/promises";
-import { session } from "neo4j-driver";
+
 class mapBtcFlow extends TransactionDatasetGenerator {
     constructor() {
         super();
@@ -93,9 +150,6 @@ class mapBtcFlow extends TransactionDatasetGenerator {
             );
             
           }
-
-          await this.createSameAsRelationship(vin.prevout.scriptpubkey_address);
-
           
         }
       }
@@ -104,7 +158,7 @@ class mapBtcFlow extends TransactionDatasetGenerator {
         if (vout.scriptpubkey_address) {
           // Check if the entity type of the address is cex
           const entityType = await this.getEntityType(vout.scriptpubkey_address, "bitcoin");
-        
+      
           if (entityType === "cex") {
             // vout.scriptpubkey_address is a cex address
             const transfers = await this.getEntityTransfers(
@@ -125,51 +179,10 @@ class mapBtcFlow extends TransactionDatasetGenerator {
               depth + 1,
               maxDepth
             );
-
           }
-          await this.createSameAsRelationship(vout.scriptpubkey_address);
-
         }
       }
-      await this.createAllSameAsRelationships();
-     
     }
-    }
-
-    async createSameAsRelationship(address) {
-      const session = this.driver.session();
-      try{
-        await session.run(
-          `
-          MATCH (vout:Vout {address: $address})
-          MATCH (vin:Vin {address: $address})
-          MERGE (vout)-[:SAME_AS]->(vin)
-          `,
-          { address }
-      );
-      console.log(`Created SAME_AS relationship for address ${address}`);
-      } catch (error) {
-        console.error(`Error creating SAME_AS relationship for address ${address}:`, error);
-      }
-    }
-
-    // New method to create all SAME_AS relationships
-    async createAllSameAsRelationships() {
-      const session = this.driver.session();
-      try{
-        await session.run(
-          `
-          MATCH (vin:Vin), (vout:Vout)
-          WHERE vin.address = vout.address
-          AND NOT (vout)-[:SAME_AS]->(vin)
-          MERGE (vout)-[:SAME_AS]->(vin)
-          `
-        );
-        console.log("Created SAME_AS relationships for all matching Vin and Vout nodes.");
-      } catch(error){
-        console.error("Error creating SAME_AS relationships for all matching Vin and Vout nodes:", error);
-        throw error;
-      }
     }
 
     async mapCexTransferToNeo4j(transfer, vinAddress) {
@@ -208,7 +221,7 @@ class mapBtcFlow extends TransactionDatasetGenerator {
             MATCH (cex:CentralizedExchange {name: $name})
             MERGE (t)-[:INVOLVES]->(cex)
             MERGE (vin:Vin {address: $vinAddress})
-            MERGE (vin)-[:SENT_TO {value: $unitValue}]->(t)
+            MERGE (vin)-[:SENT_TO]->(t)
             WITH t, cex
             OPTIONAL MATCH (t)-[r:OUTPUT]->(a:Vout {address: $cexAddress})
             DELETE r, a
@@ -224,6 +237,21 @@ class mapBtcFlow extends TransactionDatasetGenerator {
                 cexAddress: transfer.toAddress.address,
               }
             );
+
+            // Handle successors
+            if (transfer.successorTxid) {
+              await session.run(
+                `
+                MATCH (curr:Transaction {hash: $currTxid})
+                MATCH (succ:Transaction {hash: $succTxid})
+                MERGE (curr)-[:INPUTS]->(succ)
+                `,
+                {
+                  currTxid: transfer.txid,
+                  succTxid: transfer.successorTxid,
+                }
+              );
+            }
 
             console.log(`Mapped transfer ${transfer.blockHash} to Neo4j`);
           } finally {
@@ -272,6 +300,21 @@ class mapBtcFlow extends TransactionDatasetGenerator {
               value: vin.prevout.value,
             }
           );
+
+          // Create INPUTS relationship
+          if (vin.txid) {
+            await session.run(
+              `
+              MATCH (prev:Transaction {hash: $prevTxid})
+              MATCH (curr:Transaction {hash: $currTxid})
+              MERGE (prev)-[:INPUTS]->(curr)
+              `,
+              {
+                prevTxid: vin.txid,
+                currTxid: transaction.txid,
+              }
+            );
+          }
         }
       }
 
@@ -308,85 +351,8 @@ class mapBtcFlow extends TransactionDatasetGenerator {
     
         console.log("Fund flow mapping completed.");
       }
-
-
-      /*******************************************************MIXERS DATASET********************************/
-      async fetchPrecursorTransactions(txid, maxDepth) {
-        const session = this.driver.session();
-        try {
-          const result = await session.run(
-            `
-            MATCH (t:Transaction {hash: $txid})
-            CALL apoc.path.subgraphNodes(t, {
-                relationshipFilter: '<FUNDS|<SENT_TO|<SAME_AS|<OUTPUT',
-                maxLevel: $maxDepth,
-                bfs: true
-            }) YIELD node
-            WITH node
-            WHERE node:Transaction AND node.hash <> $txid
-            RETURN DISTINCT node AS precursor
-            `,
-            { txid, maxDepth }
-        );
-    
-            return result.records.map(record => record.get('precursor').properties);
-        } catch (error) {
-            console.error(`Error fetching precursor transactions for ${txid}:`, error.message);
-            throw error;
-        } finally {
-            await session.close();
-        }
-    }
-
-  async writePrecursorTransactionsToFile(txid, filePath, maxDepth = 30) {
-    try {
-        const precursorTransactions = await this.fetchPrecursorTransactions(txid, maxDepth);
-        const jsonData = JSON.stringify(precursorTransactions, null, 2);
-        await fs.writeFile(filePath, jsonData, 'utf-8');
-        console.log(`Precursor transactions successfully written to ${filePath}`);
-    } catch (error) {
-        console.error(`Error writing precursor transactions to ${filePath}:`, error);
-        throw error;
-    }
-}
-
-
-async fetchSuccessorTransactions(txid, maxDepth) {
-  const session = this.driver.session();
-  try{ 
-    const result = await session.run(
-      `
-      MATCH (t:Transaction {hash: $txid})
-      CALL apoc.path.subgraphNodes(t, {
-          relationshipFilter: '>OUTPUT|>SAME_AS|>FUNDS|',
-          maxLevel: $maxDepth,
-          bfs: true
-      }) YIELD node
-       WITH node
-       WHERE node: Transaction AND node.hash <> $txid
-       RETURN DISTINCT node AS successor
-      `,
-      { txid, maxDepth }
-    );
-    console.log("result", result.records);
-    return result.records.map(record => record.get('successor').properties);
-  } catch (error) {
-    console.error(`Error fetching successor transactions for ${txid}:`, error.message);
-    throw error;
-  }
-}
-
-async writeSuccessorTransactionsToFile(txid, filePath, maxDepth = 10) {
-  try{
-    const successorTransactions = await this.fetchSuccessorTransactions(txid, maxDepth);
-    const jsonData = JSON.stringify(successorTransactions, null, 2);
-    await fs.writeFile(filePath, jsonData, 'utf-8');
-    console.log(`Successor transactions successfully written to ${filePath}`);
-  } catch (error) {
-    console.error(`Error writing successor transactions to ${filePath}:`, error);
-    throw error;
-  }
-}
 }
 
 export default mapBtcFlow;
+
+*/

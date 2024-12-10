@@ -8,6 +8,7 @@ import TransactionDatasetGenerator from './services/generateDataset.js';
 import mapBtcFlow from './services/mapBtcFlow.js';
 import cors from 'cors';
 import router from './routes/routes.js';
+import axios from 'axios';
 import { initializeBtcNeo4jServer } from './services/btcNeoInstance.js';
 const app = express();
 
@@ -34,22 +35,43 @@ callDatabase();
 
 // **********DATASET GENERATION**********
 
-// const txHash = "0x4c954f24f4cf94e1ed1ce2d5d788eded98b3d873f0b06c07c44694300a1ba921";
+const txHash = "0x4c954f24f4cf94e1ed1ce2d5d788eded98b3d873f0b06c07c44694300a1ba921";
 
-// const seedAddresses = [
-//   { address: '3D1xsYjkitAQR3MmgP5xyvs3vKNSiu7vot', isExchange: false }, 
+const seedAddresses = [
+  { address: '3D1xsYjkitAQR3MmgP5xyvs3vKNSiu7vot', isExchange: false }, 
 
-// ];
+];
 
-// const generateDataset = new TransactionDatasetGenerator();
+const generateDataset = new TransactionDatasetGenerator();
+// const data = await generateDataset.generateJsonData(seedAddresses, 10);
+// console.log(data);
+// const postData = async (data) => {  // Define a function for posting data
+//   try {
+//       const responses = []; // Store responses for each transaction
+//       for (const transaction of data) {  // Loop through each transaction object
+//           const response = await axios.post('http://localhost:8000/single-entry', transaction); // Post individual transaction
+//           console.log('Response from server:', response.data);  // Log the response for debugging
+//           responses.push(response.data);  // Store response data
+//       }
+//       return responses; // Return the array of server responses
 
-// generateDataset.generateDataset(seedAddresses, 10);
+//   } catch (error) {
+//       console.error('Error posting data:', error);
+//       return []; // Return an empty array in case of error
+//   }
+// }
+
+
+// const postResults = await postData(data);  // Post the transaction data
+// console.log("Post results:", postResults);
+
+generateDataset.generateDataset(seedAddresses, 10);
 
 
 // **********BTC FLOW MAPPING**********
-const btcFlowMapper = new mapBtcFlow();
-const startAddress = 'bc1qqsa6ac4aeqf6h0xrfea9dj73khjxe8twu4el53g6ln8es9acmn2qddza00';
-const MAX_DEPTH = 10;
+// const btcFlowMapper = new mapBtcFlow();
+// const startAddress = 'bc1qqsa6ac4aeqf6h0xrfea9dj73khjxe8twu4el53g6ln8es9acmn2qddza00';
+// const MAX_DEPTH = 10;
 
 // bc1qv328hla8zswhxghakz80ukdp5haxkxahllhgd2
 // bc1qqsa6ac4aeqf6h0xrfea9dj73khjxe8twu4el53g6ln8es9acmn2qddza00
@@ -69,7 +91,7 @@ const generateMixerDataset = new mapBtcFlow();
 // await generateMixerDataset.writePrecursorLayersToFile('bbefefd2f5da927a570213c8e98418ebdff4deebf48726ceabdd1ea58655f654', 'tree_back.json', 10);
 // 4eb717c3e79d70dea15c2cb5cf8470f271244bea2dac7f9ec1789ad4feec4054
 
-await generateMixerDataset.writeSuccessorLayersToFile('e285b1a30d9619343f35956109feec631ecc9c2476fb0eec40902892fdba59b1', 'tree_front.json', 30);
+// await generateMixerDataset.writeSuccessorLayersToFile('e285b1a30d9619343f35956109feec631ecc9c2476fb0eec40902892fdba59b1', 'tree_front.json', 30);
 
 app.use(
     cors({

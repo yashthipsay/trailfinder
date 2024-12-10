@@ -22,10 +22,10 @@ class TransactionDatasetGenerator {
         this.createCsvWriter = csv.createObjectCsvWriter({
             path: 'transaction_dataset.csv',
             header: [
-                {id: 'txid', title: 'transaction_hash'},
+                {id: 'transaction_hash', title: 'transaction_hash'},
                 {id: 'transactionIndex', title: 'transaction_index'},
-                {id: 'blockhash', title: 'block_hash'},
-                {id: 'blockheight', title: 'block_height'},
+                {id: 'block_hash', title: 'block_hash'},
+                {id: 'block_height', title: 'block_height'},
                 {id: 'blocktime', title: 'block_time'},
                 {id: 'historicalusdprice', title: 'historical_usd_price'},
                 {id: 'from', title: 'from'},
@@ -141,7 +141,7 @@ class TransactionDatasetGenerator {
         const out_btc = outputs.reduce((sum, output) => sum + (output.value || 0), 0);
 
         return {
-            txid: transaction.txid,
+            transaction_hash: transaction.txid,
             timestamp: transaction.status.block_time,
             indegree,
             outdegree,
@@ -170,8 +170,8 @@ class TransactionDatasetGenerator {
 
         return {
             transactionIndex: tx.transactionIndex || 'NA',
-            blockhash: tx.blockHash || 'NA',
-            blockheight: tx.blockHeight || 'NA',
+            block_hash: tx.blockHash || 'NA',
+            block_height: tx.blockHeight || 'NA',
             blocktime: tx.blockTimestamp || 'NA',
             historicalusdprice: tx.inputUSD || 'NA',
             from: tx.inputs?.[0]?.address?.address || 'NA',
@@ -184,8 +184,8 @@ class TransactionDatasetGenerator {
         console.error('Error fetching Arkham transaction details:', error.message);
         return {
             transactionIndex: "NA",
-                blockhash: "NA",
-                blockheight: "NA",
+                block_hash: "NA",
+                block_height: "NA",
                 blocktime: "NA",
                 historicalusdprice: "NA",
                 from: "NA",
@@ -239,8 +239,8 @@ for (const address of seedAddresses) {
         const combinedMetrics = {
             ...metrics,
             transactionIndex: arkhamTxDetails.transactionIndex,
-            blockhash: arkhamTxDetails.blockhash,
-            blockheight: arkhamTxDetails.blockheight,
+            block_hash: arkhamTxDetails.block_hash,
+            block_height: arkhamTxDetails.blockheight,
             blocktime: arkhamTxDetails.blocktime,
             historicalusdprice: arkhamTxDetails.historicalusdprice,
             from: arkhamTxDetails.from,
@@ -304,9 +304,53 @@ this.labelClusters();
 await this.saveDataset();
     }
 
+    /**********************************GENERATE JSON DATA ************************************/
+    async generateJsonData(seedAddresses, maxTransactions) {
+        const jsonData = []; // Array to store JSON data
+
+        // Start with seed addresses
+        const knownExchanges = new Set(seedAddresses.filter(addr => addr.isExchange).map(addr => addr.address));
+
+        for (const address of seedAddresses) {
+            const transactions = await this.fetchAddressTransactions(address.address);
+
+            for (const tx of transactions.slice(1, maxTransactions)) {  // Limit transactions if needed
+
+                if (this.transactions.has(tx.txid)) {
+                    continue; // Skip already processed transactions
+                }
+
+                // Fetch transaction details from Arkham API
+                const arkhamTxDetails = await this.getArkhamTxDetails(tx.txid);
+
+                const txDetails = await this.fetchTransactionDetails(tx.txid);
+                if (!txDetails) continue;
+
+
+                const metrics = this.calculateMetrics(txDetails);
+
+                const combinedMetrics = {
+                    ...metrics,
+                    ...arkhamTxDetails, // Spread arkham details directly
+                };
+
+                combinedMetrics.is_exchange = txDetails.vout.some(output => knownExchanges.has(output.scriptpubkey_address));
+
+                this.transactions.set(tx.txid, combinedMetrics); // Store in the map (if needed elsewhere)
+
+                jsonData.push(combinedMetrics); // Push to the JSON array
+            }
+        }
+
+        return jsonData;
+    }
+
+// ****************************************************************************************************************
+
+
     labelClusters() {
         // Simple clustering based on transaction patterns
-        for (const [txid, metrics] of this.transactions.entries()) {
+        for (const [transaction_hash, metrics] of this.transactions.entries()) {
             // Example clustering logic:
             if (metrics.is_exchange) {
                 metrics.cluster_label = 1; // Exchange-related

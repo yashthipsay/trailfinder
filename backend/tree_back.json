@@ -1,79 +1,52 @@
 [
   {
-    "totalVinValue": 2328690160,
-    "totalVoutValue": 2328553713,
-    "confirmed": true,
-    "hash": "35e47867a7ee6a2759cf6b6bf80130607cda52e6cc1f8ad6af83e9d7ecbe732d",
-    "fee": 136447
+    "transaction": [
+      "bbefefd2f5da927a570213c8e98418ebdff4deebf48726ceabdd1ea58655f654"
+    ],
+    "precursors": [
+      "0d267f19bde7f50365dc05ae7d2c03e5d9dd3e382619199d45b86640cae6cd8b"
+    ]
   },
   {
-    "totalVinValue": 25080313,
-    "totalVoutValue": 25062170,
-    "confirmed": true,
-    "hash": "7c00edcb864d538d9b81bd67558375a8447dc76668ebe1fdd48d49ac088d1efe",
-    "fee": 18143
+    "transaction": [
+      "0d267f19bde7f50365dc05ae7d2c03e5d9dd3e382619199d45b86640cae6cd8b"
+    ],
+    "precursors": [
+      "691a7e28f76b88001c0a59b06bdd5759271e4e86d9cfb9cef338ce9c4cc3d0bd"
+    ]
   },
   {
-    "totalVinValue": 2914328623,
-    "totalVoutValue": 2914327608,
-    "confirmed": true,
-    "hash": "304476f9e00410c6515cde4af1c60213a9df2371918c2f5c48e31014fd90296b",
-    "fee": 1015
+    "transaction": [
+      "691a7e28f76b88001c0a59b06bdd5759271e4e86d9cfb9cef338ce9c4cc3d0bd"
+    ],
+    "precursors": [
+      "1d0d08eb74d1b44b780b0571aec3b88b1541d00b5ded359901179c4f08f65446"
+    ]
   },
   {
-    "totalVinValue": 4424038604,
-    "totalVoutValue": 4424037559,
-    "confirmed": true,
-    "hash": "8c50cd2998232e7d700842bd6566b8a1261c667442f0e07f0d17b3a8c03afea8",
-    "fee": 1045
-  },
-  {
-    "totalVinValue": 39837700,
-    "totalVoutValue": 39814444,
-    "confirmed": true,
-    "hash": "bef651e73c3a7ed851cabcb5cc50c9e95e4eb871a4a89a99d435e7c503817165",
-    "fee": 23256
-  },
-  {
-    "totalVinValue": 543960324,
-    "totalVoutValue": 543959230,
-    "confirmed": true,
-    "hash": "f376b15d34ca569dbd74273571399e79ea2c09ac216dcf2868bb638d11ebe219",
-    "fee": 1094
-  },
-  {
-    "totalVinValue": 1173011100,
-    "totalVoutValue": 1173010858,
-    "confirmed": true,
-    "hash": "2a929933318ab3c69cb32f751f68eb8faaa08c1d703590f5bbc3bed34ef9a5f0",
-    "fee": 242
-  },
-  {
-    "totalVinValue": 35398032,
-    "totalVoutValue": 35397824,
-    "confirmed": true,
-    "hash": "48cbdfff1054c342792688758035ba1c02c3f967779892efe5d3b4ee1d4a15b9",
-    "fee": 208
-  },
-  {
-    "totalVinValue": 2949396162,
-    "totalVoutValue": 2949395695,
-    "confirmed": true,
-    "hash": "555a2b6fabb0ab115b4d77fc1f5dc684239b4f4a52b9133f3610843849e2f329",
-    "fee": 467
-  },
-  {
-    "totalVinValue": 35506990,
-    "totalVoutValue": 35506793,
-    "confirmed": true,
-    "hash": "8c9b16ef17d09d6833a6f781eb0b90443a07d1f16580615f93194ad614fb0ef6",
-    "fee": 197
-  },
-  {
-    "totalVinValue": 35672774,
-    "totalVoutValue": 35671990,
-    "confirmed": true,
-    "hash": "2059045b21b7211ac311955f6001cef69daa590eae11455e985ca23172450213",
-    "fee": 784
+    "transaction": [
+      "1d0d08eb74d1b44b780b0571aec3b88b1541d00b5ded359901179c4f08f65446"
+    ],
+    "precursors": [
+      "012e93365369509f47520f52c2bb7970d6149f62403954fe3a8686453144016d",
+      "39e855dedacce4c14570cea5a42618eb634442e7070f8e3688220dff72ceaba9",
+      "3ad529407ccced341ceb930faa41f23f8ec52b8e8d348d271120cab92d587286",
+      "5b66155bb209af8b20bbd1903635a6add78416adbeb1b81f640050ccb9936032",
+      "6cda1fec2ad02b1e1a551224c075c9c74492d8122371df067fd2afbfb22cbbb4",
+      "a48b08265de541b01bcfd342e37d438530d48321d045e1c89e31801d5632879e",
+      "9f8f5252d41bd2117df685c5b84bc47a65c91d4956b509834fc3c458b9e46236",
+      "eadfc1caf90f15f44c12658e971bd9f7c908e988e2a4ce83059edec2372135b8",
+      "20e8b3e4b0b945de4691cfa0a94f0ef325d1f39631f5d665807a48cd0612e92f",
+      "72b6f28ab5bda67b4fe001746c050d3af484002ac596ec586864d535119bd07f",
+      "b768e9836b547cefd99a8982fb5413840989fa97e3303afedac83a6ee9f19114",
+      "83d92f183353755777fc97794fae534c615b265d427e833cff55c1765080914d",
+      "ee1e842534964e57880b1a7b004a91553693312c6852a9885006a3f37da5bd5a",
+      "6510580f4b6b0c9aa9f70b123fbdb91a21d160a8ce523468d1c5cdaa268f9757",
+      "b85d6089f2270cc394e70e3425c5ae86dc08781c41ac05226c5f49fb159e4fe7",
+      "8a8703a721e0faebdcb43c3180e84cc4f6c66d0a1f85047d84c3cbd2f24e6a13",
+      "22e7a5d390159014afc0855033e6abc85f325296c814fb587a1f06af48d9dac8",
+      "d016fe27300966634165d4867efe92f9dab60dcd3bca477513a0d86bceb49570",
+      "e2200252e8605602418ef36b077e7ecbcc9910cb0834e7a35162ce1b107fa007"
+    ]
   }
 ]

@@ -1,30 +1,32 @@
 [
   {
-    "totalVinValue": 2328690160,
-    "totalVoutValue": 2328553713,
-    "confirmed": true,
-    "hash": "35e47867a7ee6a2759cf6b6bf80130607cda52e6cc1f8ad6af83e9d7ecbe732d",
-    "fee": 136447
+    "transaction": "e285b1a30d9619343f35956109feec631ecc9c2476fb0eec40902892fdba59b1",
+    "successors": [
+      "012e93365369509f47520f52c2bb7970d6149f62403954fe3a8686453144016d"
+    ]
   },
   {
-    "totalVinValue": 7480880489,
-    "totalVoutValue": 7480687673,
-    "confirmed": true,
-    "hash": "8641bd4414ccf0957dcd154554cb4c310e27488c82e875821e5330578f434fff",
-    "fee": 192816
+    "transaction": "012e93365369509f47520f52c2bb7970d6149f62403954fe3a8686453144016d",
+    "successors": [
+      "1d0d08eb74d1b44b780b0571aec3b88b1541d00b5ded359901179c4f08f65446"
+    ]
   },
   {
-    "totalVinValue": 2372482028,
-    "totalVoutValue": 2372433270,
-    "confirmed": true,
-    "hash": "aa29d65485786ba752f7034bf76d060466bdabae7dc64ecd1f291be2984c7cdc",
-    "fee": 48758
+    "transaction": "1d0d08eb74d1b44b780b0571aec3b88b1541d00b5ded359901179c4f08f65446",
+    "successors": [
+      "691a7e28f76b88001c0a59b06bdd5759271e4e86d9cfb9cef338ce9c4cc3d0bd"
+    ]
   },
   {
-    "totalVinValue": 3371739976,
-    "totalVoutValue": 3371566481,
-    "confirmed": true,
-    "hash": "29829ef302983956f39a8bbdb666eec7136b6a7c1f18d8f84da6a65f9342bfcf",
-    "fee": 173495
+    "transaction": "691a7e28f76b88001c0a59b06bdd5759271e4e86d9cfb9cef338ce9c4cc3d0bd",
+    "successors": [
+      "0d267f19bde7f50365dc05ae7d2c03e5d9dd3e382619199d45b86640cae6cd8b"
+    ]
+  },
+  {
+    "transaction": "0d267f19bde7f50365dc05ae7d2c03e5d9dd3e382619199d45b86640cae6cd8b",
+    "successors": [
+      "bbefefd2f5da927a570213c8e98418ebdff4deebf48726ceabdd1ea58655f654"
+    ]
   }
 ]

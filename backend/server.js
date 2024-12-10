@@ -47,11 +47,12 @@ callDatabase();
 
 
 // **********BTC FLOW MAPPING**********
-// const btcFlowMapper = new mapBtcFlow();
-// const startAddress = 'bc1qv328hla8zswhxghakz80ukdp5haxkxahllhgd2';
-// const MAX_DEPTH = 10;
+const btcFlowMapper = new mapBtcFlow();
+const startAddress = 'bc1qqsa6ac4aeqf6h0xrfea9dj73khjxe8twu4el53g6ln8es9acmn2qddza00';
+const MAX_DEPTH = 10;
 
-// // bc1qqsa6ac4aeqf6h0xrfea9dj73khjxe8twu4el53g6ln8es9acmn2qddza00
+// bc1qv328hla8zswhxghakz80ukdp5haxkxahllhgd2
+// bc1qqsa6ac4aeqf6h0xrfea9dj73khjxe8twu4el53g6ln8es9acmn2qddza00
 
 // btcFlowMapper
 //      .startMapping(startAddress, MAX_DEPTH)
@@ -65,14 +66,14 @@ callDatabase();
 //     });
 
 const generateMixerDataset = new mapBtcFlow();
-await generateMixerDataset.writePrecursorTransactionsToFile('0c2cb69195c090e1f4057d93ab368e5fbddc48b80e27dd6bb4c788b27d2aa302', 'tree_back.json', 30);
+// await generateMixerDataset.writePrecursorLayersToFile('bbefefd2f5da927a570213c8e98418ebdff4deebf48726ceabdd1ea58655f654', 'tree_back.json', 10);
 // 4eb717c3e79d70dea15c2cb5cf8470f271244bea2dac7f9ec1789ad4feec4054
 
-await generateMixerDataset.writeSuccessorTransactionsToFile('0c2cb69195c090e1f4057d93ab368e5fbddc48b80e27dd6bb4c788b27d2aa302', 'tree_front.json', 30);
+await generateMixerDataset.writeSuccessorLayersToFile('e285b1a30d9619343f35956109feec631ecc9c2476fb0eec40902892fdba59b1', 'tree_front.json', 30);
 
 app.use(
     cors({
-      origin: "httplocalhost:3000",
+      origin: "http://localhost:3000",
     })
   );
   app.use(bodyParser.urlencoded({ extended: true }));

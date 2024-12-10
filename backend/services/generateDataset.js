@@ -26,12 +26,12 @@ class TransactionDatasetGenerator {
                 {id: 'transactionIndex', title: 'transaction_index'},
                 {id: 'block_hash', title: 'block_hash'},
                 {id: 'block_height', title: 'block_height'},
-                {id: 'blocktime', title: 'block_time'},
-                {id: 'historicalusdprice', title: 'historical_usd_price'},
+                {id: 'block_time', title: 'block_time'},
+                {id: 'historical_usd_price', title: 'historical_usd_price'},
                 {id: 'from', title: 'from'},
-                {id: 'fromchain', title: 'from_chain'},
+                {id: 'from_chain', title: 'from_chain'},
                 {id: 'to', title: 'to'},
-                {id: 'tochain', title: 'to_chain'},
+                {id: 'to_chain', title: 'to_chain'},
                 {id: 'type', title: 'type'},
                 {id: 'timestamp', title: 'timestamp'},
                 {id: 'indegree', title: 'indegree'},
@@ -172,12 +172,12 @@ class TransactionDatasetGenerator {
             transactionIndex: tx.transactionIndex || 'NA',
             block_hash: tx.blockHash || 'NA',
             block_height: tx.blockHeight || 'NA',
-            blocktime: tx.blockTimestamp || 'NA',
-            historicalusdprice: tx.inputUSD || 'NA',
+            block_time: tx.blockTimestamp || 'NA',
+            historical_usd_price: tx.inputUSD || 'NA',
             from: tx.inputs?.[0]?.address?.address || 'NA',
-            fromchain: tx.inputs?.[0]?.address?.chain || 'NA',
+            from_chain: tx.inputs?.[0]?.address?.chain || 'NA',
             to: tx.outputs?.[0]?.address?.address || 'NA',
-            tochain: tx.outputs?.[0]?.address?.chain || 'NA',
+            to_chain: tx.outputs?.[0]?.address?.chain || 'NA',
             type: tx.type || 'NA'
         };
     } catch (error) {
@@ -186,12 +186,12 @@ class TransactionDatasetGenerator {
             transactionIndex: "NA",
                 block_hash: "NA",
                 block_height: "NA",
-                blocktime: "NA",
-                historicalusdprice: "NA",
+                block_time: "NA",
+                historical_usd_price: "NA",
                 from: "NA",
-                fromchain: "NA",
+                from_chain: "NA",
                 to: "NA",
-                tochain: "NA",
+                to_chain: "NA",
                 type: "NA",
         };
     }
@@ -240,13 +240,13 @@ for (const address of seedAddresses) {
             ...metrics,
             transactionIndex: arkhamTxDetails.transactionIndex,
             block_hash: arkhamTxDetails.block_hash,
-            block_height: arkhamTxDetails.blockheight,
-            blocktime: arkhamTxDetails.blocktime,
-            historicalusdprice: arkhamTxDetails.historicalusdprice,
+            block_height: arkhamTxDetails.block_height,
+            block_time: arkhamTxDetails.block_time,
+            historical_usd_price: arkhamTxDetails.historical_usd_price,
             from: arkhamTxDetails.from,
-            fromchain: arkhamTxDetails.fromchain,
+            from_chain: arkhamTxDetails.from_chain,
             to: arkhamTxDetails.to,
-            tochain: arkhamTxDetails.tochain,
+            to_chain: arkhamTxDetails.to_chain,
             type: arkhamTxDetails.type
         };
         
@@ -341,7 +341,7 @@ await this.saveDataset();
                 jsonData.push(combinedMetrics); // Push to the JSON array
             }
         }
-
+        console.log(jsonData);
         return jsonData;
     }
 

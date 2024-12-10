@@ -38,34 +38,35 @@ callDatabase();
 const txHash = "0x4c954f24f4cf94e1ed1ce2d5d788eded98b3d873f0b06c07c44694300a1ba921";
 
 const seedAddresses = [
-  { address: '3D1xsYjkitAQR3MmgP5xyvs3vKNSiu7vot', isExchange: false }, 
+  { address: '1NRy8GbX56MymBhDYMyqsNKwW9VupqKVG7', isExchange: false }, 
 
 ];
 
 const generateDataset = new TransactionDatasetGenerator();
-// const data = await generateDataset.generateJsonData(seedAddresses, 10);
-// console.log(data);
-// const postData = async (data) => {  // Define a function for posting data
-//   try {
-//       const responses = []; // Store responses for each transaction
-//       for (const transaction of data) {  // Loop through each transaction object
-//           const response = await axios.post('http://localhost:8000/single-entry', transaction); // Post individual transaction
-//           console.log('Response from server:', response.data);  // Log the response for debugging
-//           responses.push(response.data);  // Store response data
-//       }
-//       return responses; // Return the array of server responses
+const data = await generateDataset.generateJsonData(seedAddresses, 40);
+const postData = async (data) => {  // Define a function for posting data
 
-//   } catch (error) {
-//       console.error('Error posting data:', error);
-//       return []; // Return an empty array in case of error
-//   }
-// }
+  try {
+    const responses = [];
+      for (const transaction of data) {  // Loop through each transaction object
+          const response = await axios.post('http://localhost:8000/single-entry', transaction); // Post individual transaction
+          console.log('Response from server:', response.data);  // Log the response for debugging
+          responses.push(response.data);  // Store response data
+      }
+
+      return responses;
+
+  } catch (error) {
+      console.error('Error posting data:', error);
+      return []; // Return an empty array in case of error
+  }
+}
 
 
-// const postResults = await postData(data);  // Post the transaction data
+const postResults = await postData(data);  // Post the transaction data
 // console.log("Post results:", postResults);
 
-generateDataset.generateDataset(seedAddresses, 10);
+// generateDataset.generateDataset(seedAddresses, 10);
 
 
 // **********BTC FLOW MAPPING**********
@@ -91,7 +92,7 @@ const generateMixerDataset = new mapBtcFlow();
 // await generateMixerDataset.writePrecursorLayersToFile('bbefefd2f5da927a570213c8e98418ebdff4deebf48726ceabdd1ea58655f654', 'tree_back.json', 10);
 // 4eb717c3e79d70dea15c2cb5cf8470f271244bea2dac7f9ec1789ad4feec4054
 
-// await generateMixerDataset.writeSuccessorLayersToFile('e285b1a30d9619343f35956109feec631ecc9c2476fb0eec40902892fdba59b1', 'tree_front.json', 30);
+// await generateMixerDataset.writeSuccessorLayersToFile('823a18cdd015a2c5a7be6517a0e9ebfe022532d8170141e5a880c67bda82c724', 'tree_front.json', 30);
 
 app.use(
     cors({

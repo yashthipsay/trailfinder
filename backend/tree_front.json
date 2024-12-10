@@ -1,32 +1,9 @@
 [
   {
-    "transaction": "e285b1a30d9619343f35956109feec631ecc9c2476fb0eec40902892fdba59b1",
+    "transaction": "823a18cdd015a2c5a7be6517a0e9ebfe022532d8170141e5a880c67bda82c724",
     "successors": [
-      "012e93365369509f47520f52c2bb7970d6149f62403954fe3a8686453144016d"
-    ]
-  },
-  {
-    "transaction": "012e93365369509f47520f52c2bb7970d6149f62403954fe3a8686453144016d",
-    "successors": [
-      "1d0d08eb74d1b44b780b0571aec3b88b1541d00b5ded359901179c4f08f65446"
-    ]
-  },
-  {
-    "transaction": "1d0d08eb74d1b44b780b0571aec3b88b1541d00b5ded359901179c4f08f65446",
-    "successors": [
-      "691a7e28f76b88001c0a59b06bdd5759271e4e86d9cfb9cef338ce9c4cc3d0bd"
-    ]
-  },
-  {
-    "transaction": "691a7e28f76b88001c0a59b06bdd5759271e4e86d9cfb9cef338ce9c4cc3d0bd",
-    "successors": [
-      "0d267f19bde7f50365dc05ae7d2c03e5d9dd3e382619199d45b86640cae6cd8b"
-    ]
-  },
-  {
-    "transaction": "0d267f19bde7f50365dc05ae7d2c03e5d9dd3e382619199d45b86640cae6cd8b",
-    "successors": [
-      "bbefefd2f5da927a570213c8e98418ebdff4deebf48726ceabdd1ea58655f654"
+      "8ea778e48f24f879408b3f0facbb49cd91d93b07119eba76f3c28a2efa65eceb",
+      "a38d8f2466951dc96cf7bb6a27401b25ecba78b04b1bb063ab2237f11ae7af8b"
     ]
   }
 ]

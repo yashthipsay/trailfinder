@@ -95,8 +95,7 @@ class mapBtcFlow extends TransactionDatasetGenerator {
           }
 
           await this.createSameAsRelationship(vin.prevout.scriptpubkey_address);
-
-          
+          await this.generatePostAndMapData(vin.prevout.scriptpubkey_address, 10);
         }
       }
 
@@ -128,7 +127,7 @@ class mapBtcFlow extends TransactionDatasetGenerator {
 
           }
           await this.createSameAsRelationship(vout.scriptpubkey_address);
-
+          await this.generatePostAndMapData(vout.scriptpubkey_address, 10);
         }
       }
       await this.createAllSameAsRelationships();
@@ -171,7 +170,64 @@ class mapBtcFlow extends TransactionDatasetGenerator {
         throw error;
       }
     }
+ /***************************GENERATE POST AND MAP DATA***********************************/
 
+ async generatePostAndMapData(address, maxTransactions) {
+  console.log(`Generating transaction data for address ${address}`);
+  const jsonData = await this.generateJsonData(address, maxTransactions);
+  console.log(jsonData)
+  if (jsonData.length === 0) {
+      console.log("No transaction data generated. Exiting.");
+      return;
+  }
+  try {
+      const postResults = await this.postData(jsonData); // Post and get results
+
+      if (Array.isArray(postResults)) {
+        console.log("GeneratePostAndMapData:", postResults);  
+         await this.mapAnomalyDataToNeo4j(postResults);
+      } else {
+          console.error("Unexpected response format from server:", postResults);
+      }
+
+  } catch (error) {
+      console.error("Error in generatePostAndMapData:", error)
+  }
+}
+
+
+
+
+
+/***************************************MAP ANOMOLOUS VALUES **********************************/
+async mapAnomalyDataToNeo4j(results) {
+  const session = this.driver.session();
+  try {
+    for (const result of results) {
+          const txid = result.transaction_hash;
+          const anomalyValue = result.anomaly;
+          const anomaly = anomalyValue === 1; // Or appropriate conversion
+
+      await session.run(
+        `
+        MERGE (t:Transaction {hash: $txid})
+        SET t.anomaly = $anomaly
+        `,
+        { txid, anomaly }
+      );
+      console.log(`Updated anomaly status for transaction ${txid} in Neo4j: ${anomaly}`);
+    }
+
+
+  } catch (error) {
+      console.error("Error during Neo4j update:", error);
+        // Handle the error appropriately, e.g., log, retry, or re-throw
+  } finally {
+    await session.close();
+  }
+}
+
+//   ********************************************************************************
     async mapCexTransferToNeo4j(transfer, vinAddress) {
         const session = this.driver.session();
 

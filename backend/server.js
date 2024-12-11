@@ -35,60 +35,60 @@ callDatabase();
 
 // **********DATASET GENERATION**********
 
-const txHash = "0x4c954f24f4cf94e1ed1ce2d5d788eded98b3d873f0b06c07c44694300a1ba921";
+// const txHash = "0x4c954f24f4cf94e1ed1ce2d5d788eded98b3d873f0b06c07c44694300a1ba921";
 
-const seedAddresses = [
-  { address: '1NRy8GbX56MymBhDYMyqsNKwW9VupqKVG7', isExchange: false }, 
+// const seedAddresses = [
+//   { address: '1NRy8GbX56MymBhDYMyqsNKwW9VupqKVG7', isExchange: false }, 
 
-];
+// ];
 
-const generateDataset = new TransactionDatasetGenerator();
-const data = await generateDataset.generateJsonData(seedAddresses, 40);
-const postData = async (data) => {  // Define a function for posting data
+// const generateDataset = new TransactionDatasetGenerator();
+// const data = await generateDataset.generateJsonData(seedAddresses, 40);
+// const postData = async (data) => {  // Define a function for posting data
 
-  try {
-    const responses = [];
-      for (const transaction of data) {  // Loop through each transaction object
-          const response = await axios.post('http://localhost:8000/single-entry', transaction); // Post individual transaction
-          console.log('Response from server:', response.data);  // Log the response for debugging
-          responses.push(response.data);  // Store response data
-      }
+//   try {
+//     const responses = [];
+//       for (const transaction of data) {  // Loop through each transaction object
+//           const response = await axios.post('http://localhost:8000/single-entry', transaction); // Post individual transaction
+//           console.log('Response from server:', response.data);  // Log the response for debugging
+//           responses.push(response.data);  // Store response data
+//       }
 
-      return responses;
+//       return responses;
 
-  } catch (error) {
-      console.error('Error posting data:', error);
-      return []; // Return an empty array in case of error
-  }
-}
+//   } catch (error) {
+//       console.error('Error posting data:', error);
+//       return []; // Return an empty array in case of error
+//   }
+// }
 
 
-const postResults = await postData(data);  // Post the transaction data
+// const postResults = await postData(data);  // Post the transaction data
 // console.log("Post results:", postResults);
 
 // generateDataset.generateDataset(seedAddresses, 10);
 
 
 // **********BTC FLOW MAPPING**********
-// const btcFlowMapper = new mapBtcFlow();
-// const startAddress = 'bc1qqsa6ac4aeqf6h0xrfea9dj73khjxe8twu4el53g6ln8es9acmn2qddza00';
-// const MAX_DEPTH = 10;
+const btcFlowMapper = new mapBtcFlow();
+const startAddress = 'bc1qqsa6ac4aeqf6h0xrfea9dj73khjxe8twu4el53g6ln8es9acmn2qddza00';
+const MAX_DEPTH = 1;
 
 // bc1qv328hla8zswhxghakz80ukdp5haxkxahllhgd2
 // bc1qqsa6ac4aeqf6h0xrfea9dj73khjxe8twu4el53g6ln8es9acmn2qddza00
 
-// btcFlowMapper
-//      .startMapping(startAddress, MAX_DEPTH)
-//      .then(() => {
-//       console.log('BTC flow mapping completed.');
-//       return btcFlowMapper.driver.close();
-//      })
-//      .catch((error) => {
-//       console.error("Error during tracing:", error);
-//       return btcFlowMapper.driver.close();
-//     });
+btcFlowMapper
+     .startMapping(startAddress, MAX_DEPTH)
+     .then(() => {
+      console.log('BTC flow mapping completed.');
+      return btcFlowMapper.driver.close();
+     })
+     .catch((error) => {
+      console.error("Error during tracing:", error);
+      return btcFlowMapper.driver.close();
+    });
 
-const generateMixerDataset = new mapBtcFlow();
+// const generateMixerDataset = new mapBtcFlow();
 // await generateMixerDataset.writePrecursorLayersToFile('bbefefd2f5da927a570213c8e98418ebdff4deebf48726ceabdd1ea58655f654', 'tree_back.json', 10);
 // 4eb717c3e79d70dea15c2cb5cf8470f271244bea2dac7f9ec1789ad4feec4054
 

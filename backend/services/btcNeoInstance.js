@@ -14,6 +14,7 @@ type Transaction {
   confirmed: Boolean
   blockHeight: Int
   involvedCex: CentralizedExchange @relationship(type: "INVOLVES", direction: OUT)
+  anomaly: Boolean
 }
 
 type Vin {

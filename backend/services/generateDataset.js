@@ -305,47 +305,42 @@ await this.saveDataset();
     }
 
     /**********************************GENERATE JSON DATA ************************************/
-    async generateJsonData(seedAddresses, maxTransactions) {
-        const jsonData = []; // Array to store JSON data
-
-        // Start with seed addresses
-        const knownExchanges = new Set(seedAddresses.filter(addr => addr.isExchange).map(addr => addr.address));
-
-        for (const address of seedAddresses) {
-            const transactions = await this.fetchAddressTransactions(address.address);
-
-            for (const tx of transactions.slice(1, maxTransactions)) {  // Limit transactions if needed
-
-                if (this.transactions.has(tx.txid)) {
-                    continue; // Skip already processed transactions
-                }
-
-                // Fetch transaction details from Arkham API
-                const arkhamTxDetails = await this.getArkhamTxDetails(tx.txid);
-
-                const txDetails = await this.fetchTransactionDetails(tx.txid);
-                if (!txDetails) continue;
-
-
-                const metrics = this.calculateMetrics(txDetails);
-
-                const combinedMetrics = {
-                    ...metrics,
-                    ...arkhamTxDetails, // Spread arkham details directly
-                };
-
-                combinedMetrics.is_exchange = txDetails.vout.some(output => knownExchanges.has(output.scriptpubkey_address));
-
-                this.transactions.set(tx.txid, combinedMetrics); // Store in the map (if needed elsewhere)
-
-                jsonData.push(combinedMetrics); // Push to the JSON array
-            }
+    async generateJsonData(address, maxTransactions) {
+        const jsonData = [];
+        const transactions = await this.fetchAddressTransactions(address);
+        for (const tx of transactions.slice(1, maxTransactions)) {
+            if (this.transactions.has(tx.txid)) continue;
+            const arkhamTxDetails = await this.getArkhamTxDetails(tx.txid);
+            const txDetails = await this.fetchTransactionDetails(tx.txid);
+            if (!txDetails) continue;
+            const metrics = this.calculateMetrics(txDetails);
+            const combinedMetrics = { ...metrics, ...arkhamTxDetails };
+            //Remove is_exchange logic as it relies on seedAddresses object
+            this.transactions.set(tx.txid, combinedMetrics);
+            jsonData.push(combinedMetrics);
         }
-        console.log(jsonData);
         return jsonData;
     }
 
 // ****************************************************************************************************************
+ /*********************************************POST DATA******************************************/
+ async postData(jsonData) {
+
+    try {
+        const responses = [];
+          for (const transaction of jsonData) {  // Loop through each transaction object
+              const response = await axios.post('http://localhost:8000/single-entry', transaction); // Post individual transaction
+              console.log('Response from server:', response.data);  // Log the response for debugging
+              responses.push(response.data);  // Store response data
+          }
+    
+          return responses;
+    
+      } catch (error) {
+          console.error('Error posting data:', error);
+          return []; // Return an empty array in case of error
+      }
+ }
 
 
     labelClusters() {

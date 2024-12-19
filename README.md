@@ -1,7 +1,7 @@
 # TrailFinder: Connecting the Dots
 # **Bitcoin Transaction Flow Mapping with Neo4j and Arkham API**
 
-<img src="" alt="1st at Internal SIH" width="600">
+<img src="/internal SIH.jpg" alt="1st at Internal SIH" width="600">
 
 ## **Overview**
 This project is designed to trace and analyze Bitcoin transaction flows using Neo4j as the graph database, Arkham Intelligence API for enriched blockchain intelligence, and custom recursive mapping logic. The application identifies relationships between Bitcoin addresses, transactions, and centralized exchanges (`cex`) for advanced fraud detection, anomaly tracking, and fund flow visualization.
